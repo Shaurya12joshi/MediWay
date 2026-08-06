@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth bg-[#F8F2ED]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediWay — Review Verification</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
+
+
+  <script type="module" crossorigin src="/assets/admin-ooejvblM.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-CBOYVQKp.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-hpVt3zHM.css">
+</head>
+<body class="font-sans text-[#1E293B] min-h-screen bg-[#F8F2ED] antialiased p-0">
+
+<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-[#E6E6E1] h-[60px] flex items-center px-[24px]">
+  <div class="max-w-[900px] w-full mx-auto flex items-center gap-[12px]">
+    <div class="flex items-center gap-[9px]">
+      <div class="w-[34px] h-[34px] rounded-[10px] bg-[#D0423A] flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+      </div>
+      <span class="font-custom text-[29px] font-bold hover:text-[#D6453A] hover:cursor-pointer  text-[#1E293B]">MediWay Admin</span>
+    </div>
+    <div style="flex:1"></div>
+    <button onclick="window.location.href='index.html'" id="homePage" class="text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans">Home Page</button>
+    <button id="signOutBtn" class="hidden text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans">Sign out</button>
+  </div>
+</nav>
+
+<div class="max-w-[900px] mx-auto px-[24px] py-[36px]" id="pageBody">
+  <div class="text-center py-[64px] text-[#94A3B8] text-[14px]" id="loadingState">
+    <div class="w-[32px] h-[32px] border-[2px] border-[#E6E6E1] border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
+    Loading…
+  </div>
+</div>
+
+<div class="fixed bottom-[24px] left-1/2 -translate-x-1/2 z-[999] bg-[#1E293B] text-white text-[13px] py-[10px] px-[20px] rounded-[10px] opacity-0 pointer-events-none transition-all duration-300" id="toast"></div>
+
+
+</body>
+</html>

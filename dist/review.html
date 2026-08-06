@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth bg-bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediWay — Write a Review</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+      <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
+
+  <script type="module" crossorigin src="/assets/review-DwrrImGR.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-CBOYVQKp.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-hpVt3zHM.css">
+</head>
+<body class="font-sans text-text min-h-screen bg-bg antialiased m-0 p-0">
+
+<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-border h-[60px] flex items-center px-[24px]">
+  <div class="max-w-[640px] w-full mx-auto flex items-center gap-[12px]">
+    <div class="flex items-center gap-[9px]">
+      <div class="w-[34px] h-[34px] rounded-[10px] bg-red flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+      </div>
+      <span class="font-custom text-[29px] font-bold hover:text-[#D6453A] hover:cu  text-text">MediWay</span>
+    </div>
+    <div style="flex:1"></div>
+    <a id="backLink" href="searchResult.html" class="flex items-center gap-[5px] text-[13px] text-faint no-underline hover:text-text">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to profile
+    </a>
+    <button id="signOutBtn" class="text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
+  </div>
+</nav>
+
+<div class="max-w-[640px] mx-auto px-[24px] py-[36px]" id="pageBody">
+  <div class="text-center py-[64px] text-faint text-[14px]" id="loadingState">
+    <div class="w-[32px] h-[32px] border-[2px] border-border border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
+    Loading…
+  </div>
+</div>
+
+<div class="fixed bottom-[24px] left-1/2 -translate-x-1/2 z-[999] bg-text text-white text-[13px] py-[10px] px-[20px] rounded-[10px] opacity-0 pointer-events-none transition-all duration-300" id="toast"></div>
+
+<footer class="bg-[#F2F1ED] border-t border-slate-200 px-6 py-5 md:px-12 lg:px-16">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+    <div class="flex items-center gap-3">
+      <div class="bg-[#D6453A] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>
+        </svg>
+      </div>    
+      <a href="" class="font-bold text-base hover:text-[#D6453A] font-custom lg:text-xl">MediWay</a>
+      <span class="hidden sm:block text-slate-300 text-sm">|</span>
+      <span class="hidden sm:block text-slate-500 text-sm">Healthcare discovery for travelers in India</span>
+    </div>
+
+    <div class="flex items-center gap-6">
+      <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Privacy</a>
+      <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Terms</a>
+      <a href="mailto:shaurya12joshi@gmail.com" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Contact</a>
+      <a href="https://github.com/Shaurya12joshi/MEDROUTE" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
+    </div>
+
+  </div>
+</footer>
+
+</body>
+</html>

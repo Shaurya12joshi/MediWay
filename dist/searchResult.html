@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediWay</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://apis.mappls.com/advancedmaps/api/f1d1a70335edaaca083fa1c6e7226052/map_sdk?v=3.0&layer=vector"></script>
+      <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
+
+
+  <script type="module" crossorigin src="/assets/searchResults-8NXgl2ky.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-CBOYVQKp.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-hpVt3zHM.css">
+</head>
+<body class="bg-[#F8F2ED] text-[#1E293B] min-h-screen">
+
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[600] bg-[#1E293B] text-white text-[13px] font-medium px-5 py-3 rounded-xl shadow-lg opacity-0 translate-y-4 pointer-events-none transition-all duration-300 max-w-[90vw] text-center" id="toast"></div>
+
+<nav class="bg-[#F5F5F4] border-b border-gray-50 sticky top-0 z-[200]">
+  <div class="max-w-[1280px] mx-auto px-6 flex items-center gap-4 h-16">
+    <a href="" class="flex items-center gap-2.5 no-underline shrink-0">
+      <div class="bg-[#D6453A] w-9 h-9 rounded-[10px] flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+      </div>
+      <a href="index.html" class="text-2xl font-custom font-bold md:text-4xl hover:text-[#D6453A] text-[#1E293B]">MediWay</a>
+    </a>
+
+    <div class="flex-1 max-w-[900px] flex items-center bg-white border-[1.5px] border-[#E2E8F0] rounded-xl overflow-hidden transition-all focus-within:border-[#D0423A] focus-within:shadow-[0_0_0_3px_rgba(208,66,58,.08)]">
+      <input id="searchInput" type="text" placeholder="Doctor, specialty, hospital…" value=""
+        class="flex-1 border-none outline-none px-3.5 py-2.5 text-sm text-[#1E293B] bg-transparent placeholder-[#94A3B8] font-sans"/>
+      <div class="w-px h-5 bg-[#E2E8F0]"></div>
+      <button id="locBtn" onclick="detectLocation()"
+        class="flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] text-[#64748B] cursor-pointer whitespace-nowrap bg-transparent border-none outline-none font-sans">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        <span id="locLabel">Location</span>
+      </button>
+      <button onclick="applyFilters()"
+        class="bg-[#D0423A] hover:bg-[#B8362F] border-none px-4 py-3 text-white text-[13px] font-semibold cursor-pointer transition-colors font-sans">
+        Search
+      </button>
+      
+    </div>
+    <button id="signOutBtn" class="text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
+
+    <a href="#" class="flex items-center gap-1.5 bg-red-50 border-[1.5px] border-red-200 text-red-600 text-[13px] font-semibold px-3.5 py-2 rounded-[10px] no-underline whitespace-nowrap shrink-0 hover:bg-red-100">
+      <div class="pulse-dot w-2 h-2 bg-red-600 rounded-full"></div>
+      <span>Emergency</span>
+    </a>
+  </div>
+</nav>
+
+<div class="bg-white border-b border-[#E2E8F0] sticky top-16 z-[150]">
+  <div class="max-w-[1280px] mx-auto px-6 h-12 flex items-center justify-between">
+    <div class="flex bg-slate-100 rounded-[9px] p-[3px] gap-0.5">
+      <button id="vt-list" onclick="setView('list')"
+        class="vt-btn flex items-center gap-1.5 px-3.5 py-[5px] rounded-[7px] text-[13px] font-medium border-none cursor-pointer bg-white text-[#1E293B] shadow-sm font-sans transition-all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        List
+      </button>
+      <button id="vt-map" onclick="setView('map')"
+        class="vt-btn flex items-center gap-1.5 px-3.5 py-[5px] rounded-[7px] text-[13px] font-medium border-none cursor-pointer bg-transparent text-[#64748B] font-sans transition-all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        Map
+      </button>
+    </div>
+    <div class="text-[13px] text-[#64748B]"><strong id="resultCount" class="text-[#1E293B]">7</strong> results near <span id="resultCity">Varanasi</span></div>
+  </div>
+</div>
+
+<div class="page-wrap max-w-[1280px] mx-auto px-6 pt-5 pb-12" id="pageWrap">
+
+  <div class="grid grid-cols-[280px_1fr] gap-6" id="listView">
+    <aside class="sidebar">
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Type</p>
+        <div class="flex flex-wrap gap-[7px]" id="typeFilter">
+          <button class="chip active px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#D0423A] bg-[#FDECEA] text-[#D0423A] font-medium cursor-pointer font-sans transition-all" data-value="all" onclick="setFilter('type','all',this)">All</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="doctor" onclick="setFilter('type','doctor',this)">Doctors</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="hospital" onclick="setFilter('type','hospital',this)">Hospitals</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="clinic" onclick="setFilter('type','clinic',this)">Clinics</button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Specialty</p>
+        <div class="flex flex-wrap gap-[7px]" id="specialtyFilter">
+          <button class="chip active px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#D0423A] bg-[#FDECEA] text-[#D0423A] font-medium cursor-pointer font-sans" data-value="all" onclick="setFilter('specialty','all',this)">All</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','General Physician',this)">General</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Delhi Belly',this)">Delhi Belly</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Respiratory Illness',this)">Respiratory Illness</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Fever',this)">Fever</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Dengue',this)">Dengue</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Typhoid',this)">Typhoid</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Malaria',this)">Malaria</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Animal Bites',this)">Animal Bites</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Hepatitis',this)">Hepatitis</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="" onclick="setFilter('specialty','Heat-Related',this)">Heat-Related</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Cardiologist" onclick="setFilter('specialty','Cardiologist',this)">Cardiologist</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Dermatologist" onclick="setFilter('specialty','Dermatologist',this)">Dermatologist</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="ENT" onclick="setFilter('specialty','ENT',this)">ENT</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Orthopedic" onclick="setFilter('specialty','Orthopedic',this)">Orthopedic</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Pediatric" onclick="setFilter('specialty','Pediatric',this)">Pediatric</button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Options</p>
+        <div class="flex items-center justify-between py-2.5 border-b border-[#E2E8F0] text-[14px] text-[#1E293B] cursor-pointer select-none" onclick="toggleOption('openNow',this)"><span>Open now</span><div class="toggle" id="tog-openNow"></div></div>
+        <div class="flex items-center justify-between py-2.5 border-b border-[#E2E8F0] text-[14px] text-[#1E293B] cursor-pointer select-none" onclick="toggleOption('walkIn',this)"><span>Accepts walk-ins</span><div class="toggle" id="tog-walkIn"></div></div>
+        <div class="flex items-center justify-between py-2.5 border-b border-[#E2E8F0] text-[14px] text-[#1E293B] cursor-pointer select-none" onclick="toggleOption('english',this)"><span>English-speaking</span><div class="toggle" id="tog-english"></div></div>
+        <div class="flex items-center justify-between py-2.5 text-[14px] text-[#1E293B] cursor-pointer select-none" onclick="toggleOption('insurance',this)"><span>Accepts insurance</span><div class="toggle" id="tog-insurance"></div></div>
+      </div>
+
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Max distance</p>
+        <div class="flex justify-between text-xs text-[#94A3B8] mb-2"><span>0 km</span><span id="distVal">20 km</span></div>
+        <input type="range" min="1" max="20" value="20" class="w-full cursor-pointer"
+          oninput="setFilter('distance',+this.value,null);document.getElementById('distVal').textContent=this.value+' km'"/>
+      </div>
+
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Min rating</p>
+        <div class="flex flex-wrap gap-[7px]" id="ratingFilter">
+          <button class="chip active px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#D0423A] bg-[#FDECEA] text-[#D0423A] font-medium cursor-pointer font-sans" data-value="0" onclick="setFilter('rating',0,this)">Any</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="4" onclick="setFilter('rating',4,this)">4★+</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="4.5" onclick="setFilter('rating',4.5,this)">4.5★+</button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Language</p>
+        <div class="flex flex-wrap gap-[7px]" id="langFilter">
+          <button class="chip active px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#D0423A] bg-[#FDECEA] text-[#D0423A] font-medium cursor-pointer font-sans" data-value="all" onclick="setFilter('language','all',this)">All</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="English" onclick="setFilter('language','English',this)">English</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Hindi" onclick="setFilter('language','Hindi',this)">Hindi</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Kannada" onclick="setFilter('language','Kannada',this)">Kannada</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="Tamil" onclick="setFilter('language','Tamil',this)">Tamil</button>
+        </div>
+      </div>
+
+      <button onclick="resetFilters()"
+        class="w-full py-2.5 border-[1.5px] border-[#E2E8F0] rounded-xl bg-white text-[#64748B] text-[13px] cursor-pointer font-sans hover:border-[#1E293B] hover:text-[#1E293B] transition-all">
+        Reset all filters
+      </button>
+    </aside>
+
+    <main class="flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <div class="flex gap-2">
+          <button class="sort-tab bg-[#1E293B] border-[#1E293B] text-white px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans transition-all" onclick="setSort('rating',this)">Top rated</button>
+          <button class="sort-tab bg-white border-[#E2E8F0] text-[#64748B] px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans hover:border-[#1E293B]  transition-all" onclick="setSort('distance',this)">Nearest</button>
+          <button class="sort-tab bg-white border-[#E2E8F0] text-[#64748B] px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans hover:border-[#1E293B]  transition-all" onclick="setSort('name',this)">A – Z</button>
+        </div>
+        <span class="text-[13px] text-[#64748B]" id="sortedLabel">Sorted by rating</span>
+      </div>
+
+      <div id="hospitalSection">
+        <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-2.5">Nearby hospitals</p>
+        <div class="grid grid-cols-2 gap-2.5" id="hospitalGrid"></div>
+      </div>
+
+      <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8]" id="doctorLabel">Doctors</p>
+      <div id="doctorGrid"></div>
+
+      <div class="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center hidden" id="noResults">
+        <p class="text-[32px] mb-3">🔍</p>
+        <p class="font-serif text-[22px] mb-2">No results match your filters</p>
+        <p class="text-[14px] text-[#64748B]">Try widening your distance or removing some filters.</p>
+        <button onclick="resetFilters()" class="mt-4 bg-[#D0423A] text-white border-none px-6 py-2.5 rounded-[10px] text-[14px] font-semibold cursor-pointer font-sans">Reset filters</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="split-layout hidden grid grid-cols-[1fr_420px] h-[calc(100vh-112px)] overflow-hidden -mx-6 -mt-5 -mb-12 border-t border-[#E2E8F0]" id="mapView">
+    <div class="map-pane relative h-full">
+      <div id="map" class="w-full h-full"></div>
+      <button onclick="centerMap()"
+        class="absolute bottom-5 right-5 z-[400] bg-white border-[1.5px] border-[#E2E8F0] rounded-[10px] px-3.5 py-2 text-[13px] font-semibold text-[#1E293B] cursor-pointer flex items-center gap-1.5 shadow-md hover:border-[#D0423A] hover:text-[#D0423A] font-sans">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Re-center
+      </button>
+    </div>
+    <div class="map-results-pane bg-[#F8F2ED] border-l border-[#E2E8F0] h-full overflow-y-auto">
+      <div class="px-4 py-3.5 pb-2.5 bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
+        <div class="font-serif text-[17px] mb-2">Results near you</div>
+        <div class="flex gap-1.5">
+          <button class="map-sort-btn bg-[#1E293B] border-[#1E293B] text-white px-[11px] py-[5px] rounded-[7px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans transition-all" onclick="setMapSort('rating',this)">Top rated</button>
+          <button class="map-sort-btn bg-white border-[#E2E8F0] text-[#64748B] px-[11px] py-[5px] rounded-[7px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans transition-all" onclick="setMapSort('distance',this)">Nearest</button>
+          <button class="map-sort-btn bg-white border-[#E2E8F0] text-[#64748B] px-[11px] py-[5px] rounded-[7px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans transition-all" onclick="setMapSort('name',this)">A–Z</button>
+        </div>
+      </div>
+      <div class="p-3 flex flex-col gap-2.5" id="mapCards"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,.15)] max-h-[80vh] overflow-y-auto transform translate-y-full transition-transform duration-300 ease-out" id="dirDrawer">
+  <div class="w-10 h-1 bg-[#E2E8F0] rounded mx-auto mt-3"></div>
+  <div class="relative px-5 pt-3.5 pb-3 border-b border-[#E2E8F0]">
+    <p class="font-serif text-[17px] text-[#1E293B] mb-0.5" id="dirDest">—</p>
+    <p class="text-[12px] text-[#64748B]" id="dirAddr">—</p>
+    <button onclick="closeDir()"
+      class="absolute top-3.5 right-4 bg-none border-[1.5px] border-[#E2E8F0] rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-[#94A3B8] hover:border-[#D0423A] hover:text-[#D0423A]">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="flex gap-2 px-5 py-3 border-b border-[#E2E8F0]">
+    <button class="dir-mode-btn flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-[10px] border-[1.5px] border-[#D0423A] bg-[#FDECEA] cursor-pointer font-sans min-w-[72px] transition-all" onclick="selectMode('drive',this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="11" width="22" height="7" rx="2"/><path d="M5 11V8a7 7 0 0 1 14 0v3"/><circle cx="7" cy="18" r="1"/><circle cx="17" cy="18" r="1"/></svg>
+      <span class="text-[11px] font-medium text-[#D0423A]">Drive</span>
+      <span class="text-[13px] font-semibold text-[#1E293B]" id="modeTimeDrive">—</span>
+    </button>
+    <button class="dir-mode-btn flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-white cursor-pointer font-sans min-w-[72px] hover:border-[#D0423A] transition-all" onclick="selectMode('walk',this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="4" r="1.5"/><path d="M7 21l2-6 2 3 3-5 1 8"/><path d="M9 15l-2-5 2-1 3 2 2-4"/></svg>
+      <span class="text-[11px] font-medium text-[#64748B]">Walk</span>
+      <span class="text-[13px] font-semibold text-[#1E293B]" id="modeTimeWalk">—</span>
+    </button>
+    <button class="dir-mode-btn flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-[10px] border-[1.5px] border-[#E2E8F0] bg-white cursor-pointer font-sans min-w-[72px] hover:border-[#D0423A] transition-all" onclick="selectMode('transit',this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="2" width="18" height="16" rx="2"/><path d="M3 10h18"/><circle cx="8" cy="21" r="1"/><circle cx="16" cy="21" r="1"/><path d="M8 18v3M16 18v3"/></svg>
+      <span class="text-[11px] font-medium text-[#64748B]">Transit</span>
+      <span class="text-[13px] font-semibold text-[#1E293B]" id="modeTimeTransit">—</span>
+    </button>
+  </div>
+  <div class="dir-steps px-5 py-3.5" id="dirSteps"></div>
+  <div class="px-5 py-3 flex gap-2.5">
+    <a class="flex-1 bg-[#D0423A] hover:bg-[#B8362F] text-white border-none py-[11px] rounded-[10px] text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-[7px] font-sans no-underline" id="dirGmapsLink" href="#" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Open in Google Maps
+    </a>
+  </div>
+</div>
+
+<footer class="bg-[#F2F1ED] border-t border-slate-200 px-6 py-5 md:px-12 lg:px-16">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+    <div class="flex items-center gap-3">
+      <div class="bg-[#D6453A] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>
+        </svg>
+      </div>    
+      <a href="" class="font-bold text-base hover:text-[#D6453A] font-custom lg:text-xl">MediWay</a>
+      <span class="hidden sm:block text-slate-300 text-sm">|</span>
+      <span class="hidden sm:block text-slate-500 text-sm">Healthcare discovery for travelers in India</span>
+    </div>
+
+    <div class="flex items-center gap-6">
+      <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Privacy</a>
+      <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Terms</a>
+      <a href="mailto:shaurya12joshi@gmail.com" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Contact</a>
+      <a href="https://github.com/Shaurya12joshi/MEDROUTE" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
+    </div>
+
+  </div>
+</footer>
+
+
+
+</body>
+</html>

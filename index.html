@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediWay</title>
+    
+    <link rel="stylesheet" href="./src/input.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon.png">
+   
+</head>
+<body class="bg-[#F8F2ED]">
+
+    <nav id="navBar" class="bg-[#F5F5F4] w-full border sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3 lg:gap-2">
+                    <div class="bg-[#D6453A] w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 lg:w-11 lg:h-11">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="white">
+                            <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>
+                        </svg>
+                    </div>
+                    <a href="" class="font-semibold text-xl hover:text-[#D6453A] font-custom lg:text-4xl">MediWay</a>
+                </div>
+                <div class="hidden md:flex items-center gap-6 text-slate-600 lg:gap-10">
+                    <a href="" class="hover:text-[#D6453A]">Features</a>
+                    <a href="" class="hover:text-[#D6453A]">How it Works</a>
+                    <a href="" class="hover:text-[#D6453A]">Emergency</a>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button id="signOutBtn" class="text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
+                    <a href="searchResult.html" class="bg-[#D6453A] px-3 py-1.5 rounded-3xl text-slate-50 cursor-pointer hover:bg-[#c2483f] font-semibold hidden md:block">
+                        Find Care Now
+                    </a>
+                    
+                    <button id="menuBtn" class="text-3xl md:hidden leading-none">☰</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="overlay" class="fixed z-50 inset-0 bg-black/30 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-40 md:hidden">
+        <div id="sidebar" class="fixed top-0 right-0 h-full w-[70%] max-w-[320px] bg-[#F5F5F4] shadow-2xl translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] z-50">
+            <div class="flex flex-col gap-8 p-10">
+                <button id="closeBtn" class="self-end text-5xl leading-none">×</button>
+                <a href="" class="text-3xl font-semibold hover:text-[#D6453A] transition">Features</a>
+                <a href="" class="text-3xl font-semibold hover:text-[#D6453A] transition">How it Works</a>
+                <a href="" class="text-3xl font-semibold hover:text-[#D6453A] transition">Emergency</a>
+                <a href="searchResult.html" class="bg-[#D6453A] text-white py-3 rounded-3xl mt-6 font-semibold text-xl hover:bg-[#c2483f] transition">
+                    Find Care Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="headerText" class="mx-4 sm:mx-6 lg:mx-8 mt-10 max-w-max">
+        <div class="bg-white rounded-3xl flex items-center gap-3 border border-black/5 py-3 px-4 shadow-sm">
+            <div class="w-3 h-3 rounded-full bg-emerald-600 flex-shrink-0"></div>
+            <p class="text-sm text-[#3F3F46]">Available across India - Bengaluru, Mumbai, Delhi & more</p>
+        </div>
+    </div>
+
+    <div class="flex flex-row lg:gap-20">
+
+        <div id="headlineText" class="flex flex-col">
+
+
+            <div class="mx-5 my-2 lg:mx-10 lg:mr-0 font-custom">
+                <div class="flex gap-6 flex-col text-3xl md:text-4xl lg:text-8xl">
+                    <h1 class="font-bold">Trusted healthcare,</h1>
+                </div>
+                <div class="flex gap-4 text-3xl md:text-4xl lg:text-8xl font-semibold">
+                    <em class="text-[#D84B3E]">wherever</em>
+                    <h1>you travel</h1>
+                </div>
+                <div class="font-sans text-sm text-stone-500 lg:text-3xl lg:max-w-screen-md mt-1">
+                    <p>Find verified doctors, hospitals, and pharmacies near you in seconds. Built for travelers, tourists, and anyone far from home.</p>
+                </div>
+            </div>
+            <div class="flex flex-col p-5 lg:px-10 lg:pt-6 lg:pb-0 gap-3">
+
+                <div class="inline-flex items-center gap-3 bg-white border border-black/8 rounded-full px-2 py-2 hidden md:hidden max-w-fit">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold z-[5]">AK</div>
+                        <div class="w-8 h-8 rounded-full bg-green-100 text-green-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[4]">SR</div>
+                        <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[3]">MJ</div>
+                        <div class="w-8 h-8 rounded-full bg-red-100 text-red-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[2]">PL</div>
+                        <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 border-2 border-white flex items-center justify-center text-[10px] font-semibold -ml-2.5 z-[1]">+9k</div>
+                    </div>
+                    <div class="w-px h-5 bg-black/10"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-amber-500 text-[13px]">★★★★★</span>
+                        <span class="text-[13px] font-semibold text-gray-900">1,000+</span>
+                        <span class="text-[13px] text-gray-500">travelers helped</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-row items-center gap-3 flex-wrap">
+                    <button onclick="window.location.href='searchResult.html'" class="bg-[#BE332B] font-bold w-[220px] p-3 rounded-full text-slate-50 hover:bg-red-700 hover:-translate-y-1 transition-all duration-300 shadow-md shadow-red-800">
+                        Find Doctor Near Me
+                    </button>
+                    <a class="border-[#E6E6E1] border-2 px-6 py-3 rounded-3xl hover:bg-white hover:border-black transition-all duration-200">
+                        Learn More
+                    </a>
+                    <div class="hidden lg:inline-flex items-center gap-3 bg-white border border-black/8 rounded-full px-2 py-2">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold z-[5]">AK</div>
+                            <div class="w-8 h-8 rounded-full bg-green-100 text-green-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[4]">SR</div>
+                            <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[3]">MJ</div>
+                            <div class="w-8 h-8 rounded-full bg-red-100 text-red-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[2]">PL</div>
+                            <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 border-2 border-white flex items-center justify-center text-[10px] font-semibold -ml-2.5 z-[1]">+9k</div>
+                        </div>
+                        <div class="w-px h-5 bg-black/10"></div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-amber-500 text-[13px]">★★★★★</span>
+                            <span class="text-[13px] font-semibold text-gray-900">1,000+</span>
+                            <span class="text-[13px] text-gray-500">travelers helped</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inline-flex items-center gap-3 bg-white border border-black/8 rounded-full px-2 py-2 md:hidden max-w-fit">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold z-[5]">AK</div>
+                        <div class="w-8 h-8 rounded-full bg-green-100 text-green-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[4]">SR</div>
+                        <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[3]">MJ</div>
+                        <div class="w-8 h-8 rounded-full bg-red-100 text-red-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[2]">PL</div>
+                        <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 border-2 border-white flex items-center justify-center text-[10px] font-semibold -ml-2.5 z-[1]">+9k</div>
+                    </div>
+                    <div class="w-px h-5 bg-black/10"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-amber-500 text-[13px]">★★★★★</span>
+                        <span class="text-[13px] font-semibold text-gray-900">1,000+</span>
+                        <span class="text-[13px] text-gray-500">travelers helped</span>
+                    </div>
+                </div>
+
+                
+
+                
+
+               <!-- <div class="w-full md:hidden lg:block" id="testimonialCard">
+                    <div class="bg-white border border-slate-200 rounded-2xl px-3 py-5 w-full">
+                        
+                        <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div id="t-avatar" class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-blue-100 text-blue-900">AK</div>
+                            <div>
+                            <span id="t-name" class="text-sm font-semibold text-slate-800 block">Anika K.</span>
+                            <span id="t-loc" class="text-xs text-slate-400">· Tourist from Germany</span>
+                            </div>
+                        </div>
+                        <span class="text-amber-500 text-base">★★★★★</span>
+                        </div>
+
+                        <div class="text-6xl text-slate-200 font-serif leading-none">"</div>
+
+                        <p id="t-quote" class="text-lg text-slate-700 leading-relaxed pb-4">
+                        Found an English-speaking doctor in Jaipur within 2 minutes. Absolute lifesaver during my solo trip.
+                        </p>
+
+                    </div>
+
+                    <div class="flex gap-1.5 mt-2.5 pl-1" id="t-dots"></div>
+                </div> -->
+
+                
+
+            </div>
+        </div>
+
+        <div id="mainCard" class="hidden lg:block lg:w-[450px] lg:bg-white lg:shadow-xl lg:rounded-t-3xl rounded-b-3xl lg:overflow-hidden">
+            <div class="relative h-[320px] bg-gradient-to-br from-[#E8ECEF] to-[#DDE7E2] overflow-hidden">
+                <div class="absolute top-48 left-20 drop-shadow-xl animate-[float_3s_ease-in-out_infinite]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" fill="#2563EB"/>
+                        <circle cx="12" cy="9" r="4" fill="white"/>
+                        <path d="M11 7.5h2v1.5h1.5v2H13V12.5h-2V11H9.5v-2H11V7.5z" fill="#2563EB"/>
+                    </svg>
+                </div>
+                <div class="absolute top-20 left-36 text-2xl drop-shadow-lg">📍</div>
+                <div class="absolute top-16 right-32 text-2xl drop-shadow-lg">💊</div>
+                <div class="absolute bottom-24 right-36 text-3xl drop-shadow-lg">🩺</div>
+                <div class="absolute top-10 left-10 bg-white px-2 py-1 rounded-xl shadow-xl">
+                    <p class="font-semibold text-md">🏥 Apollo Hospital — 0.4 km</p>
+                </div>
+                <div class="absolute inset-0 opacity-50 bg-[linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+            </div>
+            <div>
+                <div class="flex flex-row">
+                    <div class="p-4 m-3 rounded-xl bg-[#F3E6E3]">🩺</div>
+                    <div class="flex flex-col pt-4">
+                        <p class="font-semibold">Dr. Priya Sharma</p>
+                        <p class="text-slate-500">General Physician · English</p>
+                    </div>
+                    <div class="p-0 pt-[20px] ml-[110px] text-sm">
+                        <p>0.4 km</p>
+                        <p class="text-slate-500">⭐ 4.9</p>
+                    </div>
+                </div>
+                <div class="w-[400px] mx-6 border-t border-slate-300"></div>
+                <div class="flex flex-row">
+                    <div class="p-4 m-3 rounded-xl bg-[#EAF4F0]">🫀</div>
+                    <div class="flex flex-col pt-4">
+                        <p class="font-semibold">Dr. Rahul Iyer</p>
+                        <p class="text-slate-500">Cardiologist · Hindi, Tamil</p>
+                    </div>
+                    <div class="p-2 pt-[20px] ml-[110px] text-sm">
+                        <p class="px-1.5">1.1 km</p>
+                        <p class="bg-[#9cf0ca] p-1 w-14 text-center rounded-2xl text-[#198b58] font-semibold">open</p>
+                    </div>
+                </div>
+                <div class="w-[400px] mx-6 border-t border-slate-300"></div>
+                <div class="flex flex-row">
+                    <div class="p-4 m-3 rounded-xl bg-[#E4E8EE]">💊</div>
+                    <div class="flex flex-col pt-4">
+                        <p class="font-semibold">MedPlus Pharmacy</p>
+                        <p class="text-slate-500">24/7 · All medications</p>
+                    </div>
+                    <div class="p-2 pl-9 pt-[20px] ml-[110px] text-sm">
+                        <p class="px-1.5">1.1 km</p>
+                        <p class="bg-[#9cf0ca] p-1 w-14 text-center rounded-2xl text-[#198b58] font-semibold">open</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="statsArea" class="w-full mt-6">
+        <div class="px-6 md:px-12 lg:px-16">
+            <div class="border-t border-slate-300 w-full"></div>
+        </div>
+        <div class="flex items-center justify-between w-full pt-2">
+            <div class="flex items-center gap-2 px-4 py-3 md:px-12 md:py-4 lg:px-16 flex-1 justify-center">
+                <h1 class="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">2,400+</h1>
+                <div class="text-xs md:text-sm lg:text-lg text-slate-500 leading-tight">
+                    <p>Verified</p><p>providers</p>
+                </div>
+            </div>
+            <div class="self-stretch w-px bg-slate-300 my-3"></div>
+            <div class="flex items-center gap-2 px-4 py-3 md:px-12 md:py-4 lg:px-16 flex-1 justify-center">
+                <h1 class="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">180+</h1>
+                <div class="text-xs md:text-sm lg:text-lg text-slate-500 leading-tight">
+                    <p>Cities</p><p>covered</p>
+                </div>
+            </div>
+            <div class="self-stretch w-px bg-slate-300 my-3"></div>
+            <div class="flex items-center gap-2 px-6 py-3 md:px-12 md:py-4 lg:px-16 flex-1 justify-center">
+                <h1 class="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">24/7</h1>
+                <div class="text-xs md:text-sm lg:text-lg text-slate-500 leading-tight">
+                    <p>Emergency</p><p>support</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-6 md:px-12 lg:px-16">
+            <div class="border-t border-slate-300 w-full"></div>
+        </div>
+    </div>
+
+    
+     <div class=" flex ">
+
+<div class="  pt-0 w-full md:p-0 block lg:flex lg:flex-row lg:gap-[200px] lg:px-16 lg:py-10 lg:ml-[200px] lg:items-start ">
+
+        <div class="w-full max-w-sm md:w-[384px] md:max-w-[384px] rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white mt-3 ml-1 lg:shrink-0">
+
+            <div class="bg-red-700 px-5 py-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2 bg-white/15 rounded-full px-3 py-1">
+                <span class="w-2 h-2 rounded-full bg-red-300 animate-pulse"></span>
+                <span class="text-white text-xs font-semibold tracking-widest uppercase">Emergency Mode</span>
+                </div>
+                <span id="em-clock" class="text-white/60 text-xs">--:--</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="relative flex items-center justify-center w-16 h-16 shrink-0">
+                <span class="absolute inline-flex w-full h-full rounded-full bg-white/20 animate-ping"></span>
+                <button onclick="sosActivate()" class="relative w-14 h-14 rounded-full bg-white flex flex-col items-center justify-center cursor-pointer shadow-lg hover:scale-105 transition-transform duration-150">
+                    <span class="text-red-700 text-xs font-black tracking-widest">SOS</span>
+                </button>
+                </div>
+                <div>
+                <p class="text-white font-semibold text-sm">Tap SOS to alert</p>
+                <p class="text-white/60 text-xs mt-0.5">Shares location with nearest ER</p>
+                </div>
+            </div>
+            </div>
+
+            <div id="em-status" class="flex items-center gap-2 px-5 py-2 bg-red-50 border-b border-red-100">
+            <span id="em-status-dot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+            <span id="em-status-text" class="text-red-800 text-xs">Locating nearest emergency services…</span>
+            </div>
+
+            <div class="flex flex-col gap-2 px-4 py-3">
+
+            <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center shrink-0 text-lg">🏥</div>
+                <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800">Apollo Hospital — ER</p>
+                <p class="text-xs text-slate-500">Emergency room · Open 24/7</p>
+                </div>
+                <div class="text-right shrink-0">
+                <p class="text-xs font-semibold text-slate-700">0.8 km</p>
+                <span class="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">Open</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 text-lg">🚑</div>
+                <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800">ZIQITZA Ambulance</p>
+                <p class="text-xs text-slate-500">Avg. arrival · 8 min</p>
+                </div>
+                <div class="text-right shrink-0">
+                <p class="text-xs font-semibold text-slate-700">1808</p>
+                <span class="text-[10px] font-semibold text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">Tap to call</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
+                <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 text-lg">💊</div>
+                <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800">MedPlus Pharmacy</p>
+                <p class="text-xs text-slate-500">24/7 · All medications</p>
+                </div>
+                <div class="text-right shrink-0">
+                <p class="text-xs font-semibold text-slate-700">0.2 km</p>
+                <span class="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">Open</span>
+                </div>
+            </div>
+
+            </div>
+
+            <div class="flex gap-2 px-4 pb-4">
+            <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition-colors">
+                 How it works
+            </button>
+            <button class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-700 text-white text-xs font-semibold hover:bg-red-800 transition-colors">
+                Get Directions
+            </button>
+            </div>
+
+        </div>
+
+        <div class="hidden lg:flex flex-1 flex-col justify-center gap-6 py-4">
+
+            <div>
+            <p class="text-xs font-semibold tracking-widest uppercase text-[#D0423A] mb-2">How it works</p>
+            <h2 class="font-custom font-bold text-4xl text-slate-900 leading-tight">
+                Healthcare found in<br> three simple steps
+            </h2>
+            <p class="text-slate-500 text-sm mt-2 max-w-sm">
+                No app download needed. Works in any browser, anywhere in India.
+            </p>
+            </div>
+
+            <div class="flex flex-col gap-5">
+
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-[#D0423A] flex items-center justify-center shrink-0 shadow-md shadow-red-200">
+                <span class="text-white font-bold text-sm">01</span>
+                </div>
+                <div>
+                <p class="font-semibold text-slate-800 text-sm">Share your location</p>
+                <p class="text-slate-500 text-xs mt-0.5 max-w-xs">Allow location access or type any city in India. No account needed.</p>
+                </div>
+            </div>
+
+            <div class="w-px h-4 bg-slate-200 ml-5"></div>
+
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center shrink-0">
+                <span class="text-white font-bold text-sm">02</span>
+                </div>
+                <div>
+                <p class="font-semibold text-slate-800 text-sm">Filter your need</p>
+                <p class="text-slate-500 text-xs mt-0.5 max-w-xs">Pick specialty, language, distance, or activate Emergency Mode for urgent care.</p>
+                </div>
+            </div>
+
+            <div class="w-px h-4 bg-slate-200 ml-5"></div>
+
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center shrink-0">
+                <span class="text-white font-bold text-sm">03</span>
+                </div>
+                <div>
+                <p class="font-semibold text-slate-800 text-sm">Get there instantly</p>
+                <p class="text-slate-500 text-xs mt-0.5 max-w-xs">View the doctor's full profile, call directly, or open directions — all in one tap.</p>
+                </div>
+            </div>
+
+            </div>
+
+            <div class="mt-2">
+            <button class="bg-[#D0423A] text-white font-semibold text-sm px-6 py-3 rounded-3xl hover:bg-red-700 hover:-translate-y-0.5 transition-all duration-200 shadow-md shadow-red-200">
+                Find Doctors Near Me →
+            </button>
+            </div>
+
+        </div>
+
+</div>
+
+        <div class="w-full hidden md:block mt-[12.5px] p-2 pt-0 max-h-full lg:hidden " id="testimonialCardMd">
+            <div class="bg-white border border-slate-200 rounded-2xl px-3 py-5 w-full">
+                        
+                <div class="flex items-center justify-between ">
+                    <div class="flex items-center gap-3">
+                    <div id="t-avatarMd" class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 bg-blue-100 text-blue-900">AK</div>
+                    <div>
+                    <span id="t-nameMd" class="text-sm font-semibold text-slate-800 block">Anika K.</span>
+                    <span id="t-locMd" class="text-xs text-slate-400">· Tourist from Germany</span>
+                    </div>
+                    </div>
+                    <span class="text-amber-500 text-base">★★★★★</span>
+                    </div>
+
+                        <div class="text-8xl text-slate-200 font-serif leading-none">"</div>
+
+                        <p id="t-quoteMd" class="text-[30px] text-slate-700 leading-relaxed">
+                        Found an English-speaking doctor in Jaipur within 2 minutes. Absolute lifesaver during my solo trip.
+                        </p>
+
+            </div>
+
+                    <div class="flex gap-1.5 mt-2.5 pl-1 " id="t-dotsMd"></div>
+        </div>
+
+
+
+
+     </div>
+
+<div class="bg-[#1a1a1a] mt-4 px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+
+  <div class="mb-8">
+    <p class="text-xs font-semibold tracking-widest uppercase text-[#D0423A] mb-3">The Problem</p>
+    <h2 class="font-custom font-bold text-3xl md:text-4xl lg:text-5xl text-white leading-tight max-w-xl">
+      Travelers deserve better than a Google search during a health crisis
+    </h2>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <div class="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors">
+      <span class="text-4xl">
+<svg xmlns="http://www.w3.org/2000/svg" 
+     width="52" 
+     height="52" 
+     viewBox="0 0 24 24" 
+     fill="none" 
+     stroke="#FFFFFF" 
+     stroke-width="2.5" 
+     stroke-linecap="round" 
+     stroke-linejoin="round" 
+     class="lucide lucide-compass-icon lucide-compass">
+     
+  <circle cx="12" cy="12" r="10"/>
+  <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>
+</svg>      </span>
+      <div>
+        <h3 class="text-white font-bold text-lg mb-2">Unfamiliar city, no contacts</h3>
+        <p class="text-white/50 text-sm leading-relaxed">When you fall ill far from home, you have no idea which hospital to trust or which doctor to call.</p>
+      </div>
+    </div>
+
+    <div class="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></span>
+      <div>
+        <h3 class="text-white font-bold text-lg mb-2">Language barriers</h3>
+        <p class="text-white/50 text-sm leading-relaxed">Foreign tourists and inter-state travelers struggle to communicate symptoms to local doctors.</p>
+      </div>
+    </div>
+
+    <div class="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-icon lucide-clock"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+      <div>
+        <h3 class="text-white font-bold text-lg mb-2">Critical time lost</h3>
+        <p class="text-white/50 text-sm leading-relaxed">In emergencies, minutes matter. Finding an ER shouldn't involve scrolling through reviews.</p>
+      </div>
+    </div>
+
+    <div class="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors md:col-span-3 lg:col-span-3">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check-icon lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div>
+        <h3 class="text-white font-bold text-3xl mb-2 ">No way to verify trust</h3>
+        <p class="text-white/50 text-xl leading-relaxed">Generic maps show clinics but offer no insight into quality, specialization, or wait times.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bg-[#F8F2ED] px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+
+  <div class="mb-10">
+    <div class="flex items-center gap-2 mb-3">
+      <p class="text-sm font-semibold tracking-widest uppercase text-[#D0423A] font-custom2">Features</p>
+    </div>
+    <h2 class="font-custom font-bold text-4xl md:text-5xl text-slate-900 leading-tight max-w-lg mb-4">
+        <i>Everything you need, exactly when you need it</i>
+      
+    </h2>
+    <p class="text-slate-500 text-sm md:text-base max-w-md leading-relaxed">
+      From finding a general physician to locating a 24-hour emergency room, MediWay puts complete healthcare discovery in your hands.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-[#D0423A] rounded-t-2xl"></div>
+      <div class="flex items-start justify-between">
+        <span class="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#c62f2f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pinned-icon lucide-map-pinned"><path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/></svg></span>
+        <span class="text-5xl font-bold text-slate-100 leading-none">01</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Location-Aware Search</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Automatically detects your location and surfaces the closest verified providers ranked by relevance and distance.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-auto">
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Geolocation API</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Google Maps</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Real-time</span>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-[#1A7A52] rounded-t-2xl"></div>
+      <div class="flex items-start justify-between">
+        <span class="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2f7dc6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-earth-icon lucide-earth"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg></span>
+        <span class="text-5xl font-bold text-slate-100 leading-none">02</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Language Filters</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Search for doctors who speak your language. Especially useful for foreign tourists and inter-state travelers.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-auto">
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">English</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Hindi</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">+ 15 languages</span>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-[#2563EB] rounded-t-2xl"></div>
+      <div class="flex items-start justify-between">
+        <span class="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass-icon lucide-compass"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
+        <span class="text-5xl font-bold text-slate-100 leading-none">03</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Turn-by-Turn Directions</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Get live directions to any provider via Google Maps, with estimated travel time and real-time traffic.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-auto">
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Directions API</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Live traffic</span>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-[#D97706] rounded-t-2xl"></div>
+      <div class="flex items-start justify-between">
+        <span class="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#69c8f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg></span>
+        <span class="text-5xl font-bold text-slate-100 leading-none">04</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Smart Doctor Cards</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Rich profiles with ratings, specialties, timings, contact info, languages, and international payment support.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-auto">
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Ratings</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Timings</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Specialties</span>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-[#D0423A] rounded-t-2xl"></div>
+      <div class="flex items-start justify-between">
+        <span class="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffdd00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pill-icon lucide-pill"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+        <span class="text-5xl font-bold text-slate-100 leading-none">05</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Pharmacy Locator</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Find 24-hour pharmacies with stock information. Never be stuck needing medication at 2am again.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-auto">
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">24/7 filter</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Nearby</span>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-[#1A7A52] rounded-t-2xl"></div>
+      <div class="flex items-start justify-between">
+        <span class="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#C0C0C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star-icon lucide-star"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span>
+        <span class="text-5xl font-bold text-slate-100 leading-none">06</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Ratings & Reviews</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Community-verified reviews from real patients. Know what to expect before you walk in.</p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-auto">
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Verified reviews</span>
+        <span class="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Star ratings</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="bg-[#F8F2ED] px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+
+  <div class="mb-10">
+    <div class="flex items-center gap-2 mb-3">
+      <p class="text-sm font-semibold tracking-widest uppercase font-custom2 text-[#D0423A]">Built For</p>
+    </div>
+    <h2 class="font-custom font-bold text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-tight">
+     <i>Whoever needs care,</i> <br class="hidden md:block "> <i>wherever they are</i>
+    </h2>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plane-icon lucide-plane"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Foreign Tourists</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">English-speaking doctors, international payment info, and cultural context for healthcare in India.</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#6734c5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-train-front-icon lucide-train-front"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1"/><path d="m9 15-1-1"/><path d="m15 15 1-1"/><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3"/><path d="m16 19 2 3"/></svg></span>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Domestic Travelers</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Visiting an unfamiliar city? Find trusted local doctors without relying on word-of-mouth.</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Students & Professionals</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Relocated to a new city for college or work? Build a healthcare network quickly.</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
+      <span class="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-siren-icon lucide-siren"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/><path d="M21 12h1"/><path d="M18.5 4.5 18 5"/><path d="M2 12h1"/><path d="M12 2v1"/><path d="m4.929 4.929.707.707"/><path d="M12 12v6"/></svg></span>
+      <div>
+        <h3 class="font-bold text-slate-900 text-lg mb-2">Emergency Situations</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Anyone needing immediate care fast — MediWay's Emergency Mode is built for this exact moment.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="relative bg-[#111111] px-6 py-20 md:px-12 lg:px-16 lg:py-28 overflow-hidden">
+
+  <div class="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full bg-[#D0423A] opacity-20 blur-[120px] pointer-events-none"></div>
+
+  <div class="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full bg-[#1A7A52] opacity-20 blur-[120px] pointer-events-none"></div>
+
+  
+
+  <div class="relative z-10 flex flex-col items-center text-center gap-6 max-w-2xl mx-auto">
+
+    <h2 class="font-custom font-bold text-4xl md:text-5xl lg:text-6xl text-white leading-tight">
+     <i>Your health shouldn't depend on where you are</i> 
+    </h2>
+
+    <p class="text-white/50 text-sm md:text-base leading-relaxed max-w-md font-custom2">
+      Join the waitlist and be the first to access trusted healthcare discovery across India.
+    </p>
+
+    <div class="flex items-center gap-3 flex-wrap justify-center mt-2">
+      <a href="auth.html" class="font-custom2 bg-white text-slate-900 font-semibold text-sm px-6 py-3 rounded-full hover:bg-slate-100 hover:-translate-y-0.5 transition-all duration-200">
+         Join the Waitlist
+      </a>
+      <a href="https://github.com/Shaurya12joshi/MEDROUTE" class="font-custom2 bg-transparent text-white/70 font-semibold text-sm px-6 py-3 rounded-full border border-white/20 hover:border-white/50 hover:text-white hover:-translate-y-0.5 transition-all duration-200">
+        View on GitHub
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="bg-[#F2F1ED] border-t border-slate-200 px-6 py-5 md:px-12 lg:px-16">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+
+    <div class="flex items-center gap-3">
+      <div class="bg-[#D6453A] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>
+        </svg>
+      </div>    
+      <a href="" class="font-bold text-base hover:text-[#D6453A] font-custom lg:text-xl">MediWay</a>
+      <span class="hidden sm:block text-slate-300 text-sm">|</span>
+      <span class="hidden sm:block text-slate-500 text-sm">Healthcare discovery for travelers in India</span>
+    </div>
+
+    <div class="flex items-center gap-6">
+      <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Privacy</a>
+      <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Terms</a>
+      <a href="mailto:shaurya12joshi@gmail.com" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Contact</a>
+      <a href="https://github.com/Shaurya12joshi/MEDROUTE" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
+    </div>
+
+  </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./js/supabase.js"></script>
+<script type="module">
+    import { supabase } from './js/supabase.js';
+
+    async function updateAuthButton() {
+        var btn = document.getElementById('signOutBtn');
+        var { data } = await supabase.auth.getSession();
+
+        if (data.session) {
+            btn.textContent = 'Sign Out';
+            btn.onclick = async function () {
+                await supabase.auth.signOut();
+                window.location.reload();
+            };
+        } else {
+            btn.textContent = 'Join Waitlist';
+            btn.onclick = function () {
+                window.location.href = 'auth.html';
+            };
+        }
+    }
+
+    updateAuthButton();
+</script>
+
+    <script src="js/script.js"></script>
+
+
+</body>
+</html>

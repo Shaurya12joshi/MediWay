@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth bg-[#F8F2ED]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediWay — Review Verification</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/input.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon.png">
+
+
+</head>
+<body class="font-sans text-[#1E293B] min-h-screen bg-[#F8F2ED] antialiased p-0">
+
+<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-[#E6E6E1] h-[60px] flex items-center px-[24px]">
+  <div class="max-w-[900px] w-full mx-auto flex items-center gap-[12px]">
+    <div class="flex items-center gap-[9px]">
+      <div class="w-[34px] h-[34px] rounded-[10px] bg-[#D0423A] flex items-center justify-center shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+      </div>
+      <span class="font-custom text-[29px] font-bold hover:text-[#D6453A] hover:cursor-pointer  text-[#1E293B]">MediWay Admin</span>
+    </div>
+    <div style="flex:1"></div>
+    <button onclick="window.location.href='index.html'" id="homePage" class="text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans">Home Page</button>
+    <button id="signOutBtn" class="hidden text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans">Sign out</button>
+  </div>
+</nav>
+
+<div class="max-w-[900px] mx-auto px-[24px] py-[36px]" id="pageBody">
+  <div class="text-center py-[64px] text-[#94A3B8] text-[14px]" id="loadingState">
+    <div class="w-[32px] h-[32px] border-[2px] border-[#E6E6E1] border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
+    Loading…
+  </div>
+</div>
+
+<div class="fixed bottom-[24px] left-1/2 -translate-x-1/2 z-[999] bg-[#1E293B] text-white text-[13px] py-[10px] px-[20px] rounded-[10px] opacity-0 pointer-events-none transition-all duration-300" id="toast"></div>
+
+<script type="module">
+import { supabase } from './js/supabase.js';
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('opacity-0','pointer-events-none');
+  t.classList.add('opacity-100');
+  setTimeout(()=>{ t.classList.add('opacity-0','pointer-events-none'); t.classList.remove('opacity-100'); }, 2500);
+}
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function starsHtml(r){
+  let out='';
+  for (let i=1;i<=5;i++) out+=`<span style="color:${i<=r?'#F59E0B':'#D1D5DB'};font-size:13px;">★</span>`;
+  return out;
+}
+
+function renderLogin(mode = 'signin'){
+  const isSignup = mode === 'signup';
+  document.getElementById('pageBody').innerHTML = `
+    <div class="max-w-[380px] mx-auto mt-[60px] bg-white border border-[#E6E6E1] rounded-[18px] p-[28px]">
+      <h1 class="font-serif text-[22px] mb-[4px]">${isSignup ? 'Create admin account' : 'Admin sign in'}</h1>
+      <p class="text-[13px] text-[#94A3B8] mb-[20px]">${isSignup ? 'New accounts still need to be approved before they can verify reviews' : 'Verify review proof photos'}</p>
+      <form id="loginForm" class="flex flex-col gap-[14px]">
+        <input id="emailInput" type="email" placeholder="Email" required class="w-full border-[1.5px] border-[#E6E6E1] rounded-[10px] px-[14px] py-[10px] text-[14px] outline-none focus-within:border-[#D0423A] font-sans"/>
+        <input id="passInput" type="password" placeholder="Password" required minlength="6" class="w-full border-[1.5px] border-[#E6E6E1] rounded-[10px] px-[14px] py-[10px] text-[14px] outline-none focus-within:border-[#D0423A] font-sans"/>
+        <button type="submit" id="loginBtn" class="bg-[#D0423A] hover:bg-[#B8362F] text-white border-none py-[12px] rounded-[10px] text-[14px] font-semibold cursor-pointer font-sans">${isSignup ? 'Create account' : 'Sign in'}</button>
+        <p class="text-[12px] text-[#D0423A] text-center hidden" id="loginError"></p>
+        <p class="text-[12px] text-[#94A3B8] text-center hidden" id="loginInfo"></p>
+      </form>
+      <p class="text-[13px] text-[#94A3B8] text-center mt-[16px]">
+        ${isSignup ? 'Already have an account?' : "Don't have an account?"}
+        <a href="#" id="modeToggle" class="text-[#D0423A] font-medium">${isSignup ? 'Sign in' : 'Sign up'}</a>
+      </p>
+    </div>`;
+
+  document.getElementById('modeToggle').addEventListener('click', (e) => {
+    e.preventDefault();
+    renderLogin(isSignup ? 'signin' : 'signup');
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('loginError');
+    const info = document.getElementById('loginInfo');
+    err.classList.add('hidden');
+    info.classList.add('hidden');
+    btn.disabled = true; btn.textContent = isSignup ? 'Creating account…' : 'Signing in…';
+
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passInput').value;
+
+    if (isSignup) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        err.textContent = error.message;
+        err.classList.remove('hidden');
+        btn.disabled = false; btn.textContent = 'Create account';
+        return;
+      }
+      info.textContent = 'Account created. Ask an existing admin to approve it, then sign in.';
+      info.classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'Create account';
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      err.textContent = error.message;
+      err.classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'Sign in';
+      return;
+    }
+    await boot();
+  });
+}
+
+function renderNotAuthorized(){
+  document.getElementById('pageBody').innerHTML = `
+    <div class="max-w-[420px] mx-auto mt-[60px] text-center">
+      <p class="font-serif text-[22px] mb-[10px]">Not authorized</p>
+      <p class="text-[14px] text-[#94A3B8] mb-[20px]">This account isn't on the admin list. Ask whoever manages the database to add your user id to the <code>admins</code> table.</p>
+      <button id="signOutBtn2" class="text-[#D0423A] text-[14px] bg-transparent border-none cursor-pointer">Sign out</button>
+    </div>`;
+  document.getElementById('signOutBtn2').addEventListener('click', async () => { await supabase.auth.signOut(); await boot(); });
+}
+
+async function fetchPendingReviews(){
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*, doctors(name, hospital)')
+    .eq('proof_status', 'pending')
+    .order('proof_submitted_at', { ascending: true });
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+
+async function getSignedUrl(path){
+  const { data, error } = await supabase.storage.from('review-proofs').createSignedUrl(path, 300);
+  if (error) { console.error(error); return null; }
+  return data?.signedUrl || null;
+}
+
+async function renderQueue(){
+  const reviews = await fetchPendingReviews();
+  const body = document.getElementById('pageBody');
+
+  if (!reviews.length){
+    body.innerHTML = `<div class="text-center py-[64px]"><p class="font-serif text-[22px] mb-[8px]">Queue is empty</p><p class="text-[14px] text-[#94A3B8]">No proof photos waiting on review.</p></div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="mb-[20px]"><h1 class="font-serif text-[24px]">Pending verifications</h1><p class="text-[13px] text-[#94A3B8] mt-[3px]">${reviews.length} review${reviews.length===1?'':'s'} awaiting a decision</p></div><div class="flex flex-col gap-[16px]" id="queueList"></div>`;
+
+  const list = document.getElementById('queueList');
+  for (const r of reviews){
+    const card = document.createElement('div');
+    card.className = 'bg-white border border-[#E6E6E1] rounded-[16px] p-[20px] flex gap-[20px]';
+    card.innerHTML = `
+      <div class="w-[220px] h-[220px] shrink-0 rounded-[10px] bg-[#F2F1ED] flex items-center justify-center overflow-hidden">
+        <span class="text-[12px] text-[#94A3B8]">Loading photo…</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-serif text-[17px] text-[#1E293B]">${escapeHtml(r.doctors?.name || 'Unknown doctor')}</div>
+        <div class="text-[12px] text-[#94A3B8] mb-[10px]">${escapeHtml(r.doctors?.hospital || '')}</div>
+        <div class="flex items-center gap-[8px] mb-[8px]">
+          <span class="text-[13px] font-semibold text-[#1E293B]">${escapeHtml(r.author)}</span>
+          ${starsHtml(r.rating)}
+        </div>
+        ${r.stood_out?.length?`<div class="text-[12px] text-[#3F3F46] mb-[4px]"><strong>Stood out:</strong> ${r.stood_out.map(escapeHtml).join(', ')}</div>`:''}
+        ${r.could_improve?.length?`<div class="text-[12px] text-[#3F3F46] mb-[4px]"><strong>Could improve:</strong> ${r.could_improve.map(escapeHtml).join(', ')}</div>`:''}
+        <div class="text-[12px] text-[#3F3F46] mb-[14px]"><strong>Recommends:</strong> ${r.recommend ? 'Yes' : 'No'}</div>
+        <div class="flex gap-[8px]">
+          <button data-action="approve" data-id="${r.id}" class="bg-[#16A34A] hover:bg-[#15803D] text-white border-none px-[16px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans">✓ Approve — mark verified</button>
+          <button data-action="reject" data-id="${r.id}" class="bg-white border-[1.5px] border-[#E6E6E1] text-[#3F3F46] px-[16px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A]">Reject</button>
+        </div>
+      </div>`;
+    list.appendChild(card);
+
+    if (r.proof_photo_path){
+      getSignedUrl(r.proof_photo_path).then(url => {
+        const imgWrap = card.querySelector('div.w-\\[220px\\]');
+        imgWrap.innerHTML = url
+          ? `<img src="${url}" class="w-full h-full object-cover"/>`
+          : `<span class="text-[12px] text-[#94A3B8] px-[10px] text-center">Couldn't load photo</span>`;
+      });
+    }
+  }
+
+  list.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      btn.disabled = true;
+      const update = action === 'approve'
+        ? { verified: true, proof_status: 'approved' }
+        : { proof_status: 'rejected' };
+      const { error } = await supabase.from('reviews').update(update).eq('id', id);
+      if (error) { console.error(error); showToast('Something went wrong — try again'); btn.disabled = false; return; }
+      showToast(action === 'approve' ? 'Marked as verified' : 'Rejected');
+      renderQueue();
+    });
+  });
+}
+
+async function boot(){
+  const { data: { session } } = await supabase.auth.getSession();
+  const signOutBtn = document.getElementById('signOutBtn');
+
+  if (!session){
+    signOutBtn.classList.add('hidden');
+    renderLogin();
+    return;
+  }
+
+  const { data: adminRow } = await supabase.from('admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+  if (!adminRow){
+    signOutBtn.classList.add('hidden');
+    renderNotAuthorized();
+    return;
+  }
+
+  signOutBtn.classList.remove('hidden');
+  await renderQueue();
+}
+
+document.getElementById('signOutBtn').addEventListener('click', async () => { await supabase.auth.signOut(); await boot(); });
+
+boot();
+</script>
+
+</body>
+</html>

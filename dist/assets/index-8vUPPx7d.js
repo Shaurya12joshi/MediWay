@@ -1,0 +1,1 @@
+import{n as e,r as t,t as n}from"./supabase-CBOYVQKp.js";t((()=>{n();async function t(){var t=document.getElementById(`signOutBtn`),{data:n}=await e.auth.getSession();n.session?(t.textContent=`Sign Out`,t.onclick=async function(){await e.auth.signOut(),window.location.reload()}):(t.textContent=`Join Waitlist`,t.onclick=function(){window.location.href=`auth.html`})}t()}))();
