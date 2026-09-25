@@ -26,6 +26,11 @@ function closeSidebar() {
 
 }
 closeBtn.addEventListener("click", closeSidebar);
+
+// Menu links jump to a section: close the drawer so the target is visible
+sidebar.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener("click", closeSidebar);
+});
 overlay.addEventListener("click", closeSidebar);
 
 sidebar.addEventListener("click", (e) => {

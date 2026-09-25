@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +7,9 @@
     
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
    
-  <script type="module" crossorigin src="/assets/index-Dcu3eNUb.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/supabase-BwBqtc7d.js">
-  <link rel="stylesheet" crossorigin href="/assets/supabase-CE7IOkxl.css">
+  <script type="module" crossorigin src="/assets/index-BNTbgLor.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-CSUONmRi.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-enEPS6xF.css">
 </head>
 <body class="bg-[#F8F2ED]">
 
@@ -25,9 +25,9 @@
                     <a href="" class="font-semibold text-xl hover:text-[#D6453A] font-custom lg:text-4xl">MediWay</a>
                 </div>
                 <div class="hidden md:flex items-center gap-6 text-slate-600 lg:gap-10">
-                    <a href="" class="hover:text-[#D6453A]">Features</a>
-                    <a href="" class="hover:text-[#D6453A]">How it Works</a>
-                    <a href="" class="hover:text-[#D6453A]">Emergency</a>
+                    <a href="#features" class="hover:text-[#D6453A]">Features</a>
+                    <a href="#how-it-works" class="hover:text-[#D6453A]">How it Works</a>
+                    <a href="#emergency" class="hover:text-[#D6453A]">Emergency</a>
                 </div>
                 <div class="flex items-center gap-3">
                   <button id="signOutBtn" class="hidden text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
@@ -45,9 +45,9 @@
         <div id="sidebar" class="fixed top-0 right-0 h-full w-[70%] max-w-[320px] bg-[#F5F5F4] shadow-2xl translate-x-full opacity-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] z-50">
             <div class="flex flex-col gap-8 p-10">
                 <button id="closeBtn" class="self-end text-5xl leading-none">×</button>
-                <a href="" class="text-3xl font-semibold hover:text-[#D6453A] transition">Features</a>
-                <a href="" class="text-3xl font-semibold hover:text-[#D6453A] transition">How it Works</a>
-                <a href="" class="text-3xl font-semibold hover:text-[#D6453A] transition">Emergency</a>
+                <a href="#features" class="text-3xl font-semibold hover:text-[#D6453A] transition">Features</a>
+                <a href="#how-it-works" class="text-3xl font-semibold hover:text-[#D6453A] transition">How it Works</a>
+                <a href="#emergency" class="text-3xl font-semibold hover:text-[#D6453A] transition">Emergency</a>
                 <a href="searchResult.html" class="bg-[#D6453A] text-white p-3 text-center rounded-3xl mt-6 font-semibold text-xl hover:bg-[#c2483f] transition">
                     Find Care Now
                 </a>
@@ -281,7 +281,7 @@
     </div>
 
     
-     <div class="px-4 sm:px-6 md:px-12 lg:px-16 py-6 lg:py-10">
+     <div id="emergency" class="scroll-mt-20 px-4 sm:px-6 md:px-12 lg:px-16 py-6 lg:py-10">
 
 <div class="mx-auto max-w-6xl flex flex-col gap-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-20">
 
@@ -366,7 +366,7 @@
 
         </div>
 
-        <div class="flex flex-col justify-center gap-6 w-full max-w-sm mx-auto lg:mx-0 lg:justify-self-start min-w-0">
+        <div id="how-it-works" class="scroll-mt-20 flex flex-col justify-center gap-6 w-full max-w-sm mx-auto lg:mx-0 lg:justify-self-start min-w-0">
 
             <div>
             <p class="text-xs font-semibold tracking-widest uppercase text-[#D0423A] mb-2">How it works</p>
@@ -516,7 +516,7 @@
   </div>
 </div>
 
-<div class="bg-[#F8F2ED] px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+<div id="features" class="scroll-mt-20 bg-[#F8F2ED] px-6 py-12 md:px-12 lg:px-16 lg:py-16">
 
   <div class="mb-10">
     <div class="flex items-center gap-2 mb-3">
