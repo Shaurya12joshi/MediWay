@@ -102,6 +102,7 @@
   to   { transform: scale(3.4); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .mw-user::before { animation: none; }
   .mw-pin, .mw-hospital { transition: none; }
 }
