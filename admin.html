@@ -12,21 +12,21 @@
 </head>
 <body class="font-sans text-[#1E293B] min-h-screen bg-[#F8F2ED] antialiased p-0">
 
-<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-[#E6E6E1] h-[60px] flex items-center px-[24px]">
-  <div class="max-w-[900px] w-full mx-auto flex items-center gap-[12px]">
-    <div class="flex items-center gap-[9px]">
+<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-[#E6E6E1] h-[60px] flex items-center px-[16px] sm:px-[24px]">
+  <div class="max-w-[900px] w-full mx-auto flex items-center gap-[8px] sm:gap-[12px]">
+    <div class="flex items-center gap-[9px] min-w-0">
       <div class="w-[34px] h-[34px] rounded-[10px] bg-[#D0423A] flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
       </div>
-      <span class="font-custom text-[29px] font-bold hover:text-[#D6453A] hover:cursor-pointer  text-[#1E293B]">MediWay Admin</span>
+      <span class="font-custom text-[20px] sm:text-[29px] font-bold hover:text-[#D6453A] hover:cursor-pointer text-[#1E293B] truncate">MediWay Admin</span>
     </div>
     <div style="flex:1"></div>
-    <button onclick="window.location.href='index.html'" id="homePage" class="text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans">Home Page</button>
-    <button id="signOutBtn" class="hidden text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans">Sign out</button>
+    <button onclick="window.location.href='index.html'" id="homePage" class="text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans whitespace-nowrap shrink-0">Home Page</button>
+    <button id="signOutBtn" class="hidden text-[13px] text-[#94A3B8] bg-transparent border-none cursor-pointer hover:text-[#1E293B] font-sans whitespace-nowrap shrink-0">Sign out</button>
   </div>
 </nav>
 
-<div class="max-w-[900px] mx-auto px-[24px] py-[36px]" id="pageBody">
+<div class="max-w-[900px] mx-auto px-[16px] sm:px-[24px] py-[28px] sm:py-[36px]" id="pageBody">
   <div class="text-center py-[64px] text-[#94A3B8] text-[14px]" id="loadingState">
     <div class="w-[32px] h-[32px] border-[2px] border-[#E6E6E1] border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
     Loading…
@@ -57,7 +57,7 @@ function starsHtml(r){
 function renderLogin(mode = 'signin'){
   const isSignup = mode === 'signup';
   document.getElementById('pageBody').innerHTML = `
-    <div class="max-w-[380px] mx-auto mt-[60px] bg-white border border-[#E6E6E1] rounded-[18px] p-[28px]">
+    <div class="max-w-[380px] mx-auto mt-[40px] sm:mt-[60px] bg-white border border-[#E6E6E1] rounded-[18px] p-[20px] sm:p-[28px]">
       <h1 class="font-serif text-[22px] mb-[4px]">${isSignup ? 'Create admin account' : 'Admin sign in'}</h1>
       <p class="text-[13px] text-[#94A3B8] mb-[20px]">${isSignup ? 'New accounts still need to be approved before they can verify reviews' : 'Verify review proof photos'}</p>
       <form id="loginForm" class="flex flex-col gap-[14px]">
@@ -117,7 +117,7 @@ function renderLogin(mode = 'signin'){
 
 function renderNotAuthorized(){
   document.getElementById('pageBody').innerHTML = `
-    <div class="max-w-[420px] mx-auto mt-[60px] text-center">
+    <div class="max-w-[420px] mx-auto mt-[40px] sm:mt-[60px] text-center">
       <p class="font-serif text-[22px] mb-[10px]">Not authorized</p>
       <p class="text-[14px] text-[#94A3B8] mb-[20px]">This account isn't on the admin list. Ask whoever manages the database to add your user id to the <code>admins</code> table.</p>
       <button id="signOutBtn2" class="text-[#D0423A] text-[14px] bg-transparent border-none cursor-pointer">Sign out</button>
@@ -155,9 +155,9 @@ async function renderQueue(){
   const list = document.getElementById('queueList');
   for (const r of reviews){
     const card = document.createElement('div');
-    card.className = 'bg-white border border-[#E6E6E1] rounded-[16px] p-[20px] flex gap-[20px]';
+    card.className = 'bg-white border border-[#E6E6E1] rounded-[16px] p-[16px] sm:p-[20px] flex flex-col sm:flex-row gap-[16px] sm:gap-[20px]';
     card.innerHTML = `
-      <div class="w-[220px] h-[220px] shrink-0 rounded-[10px] bg-[#F2F1ED] flex items-center justify-center overflow-hidden">
+      <div class="proof-thumb w-full h-[200px] sm:w-[220px] sm:h-[220px] shrink-0 rounded-[10px] bg-[#F2F1ED] flex items-center justify-center overflow-hidden">
         <span class="text-[12px] text-[#94A3B8]">Loading photo…</span>
       </div>
       <div class="flex-1 min-w-0">
@@ -170,8 +170,8 @@ async function renderQueue(){
         ${r.stood_out?.length?`<div class="text-[12px] text-[#3F3F46] mb-[4px]"><strong>Stood out:</strong> ${r.stood_out.map(escapeHtml).join(', ')}</div>`:''}
         ${r.could_improve?.length?`<div class="text-[12px] text-[#3F3F46] mb-[4px]"><strong>Could improve:</strong> ${r.could_improve.map(escapeHtml).join(', ')}</div>`:''}
         <div class="text-[12px] text-[#3F3F46] mb-[14px]"><strong>Recommends:</strong> ${r.recommend ? 'Yes' : 'No'}</div>
-        <div class="flex gap-[8px]">
-          <button data-action="approve" data-id="${r.id}" class="bg-[#16A34A] hover:bg-[#15803D] text-white border-none px-[16px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans">✓ Approve — mark verified</button>
+        <div class="flex gap-[8px] flex-wrap">
+          <button data-action="approve" data-id="${r.id}" class="bg-[#16A34A] hover:bg-[#15803D] text-white border-none px-[16px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans">✓ Approve<span class="hidden sm:inline"> — mark verified</span></button>
           <button data-action="reject" data-id="${r.id}" class="bg-white border-[1.5px] border-[#E6E6E1] text-[#3F3F46] px-[16px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A]">Reject</button>
         </div>
       </div>`;
@@ -179,7 +179,7 @@ async function renderQueue(){
 
     if (r.proof_photo_path){
       getSignedUrl(r.proof_photo_path).then(url => {
-        const imgWrap = card.querySelector('div.w-\\[220px\\]');
+        const imgWrap = card.querySelector('div.proof-thumb');
         imgWrap.innerHTML = url
           ? `<img src="${url}" class="w-full h-full object-cover"/>`
           : `<span class="text-[12px] text-[#94A3B8] px-[10px] text-center">Couldn't load photo</span>`;

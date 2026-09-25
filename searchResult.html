@@ -6,8 +6,6 @@
   <title>MediWay</title>
   
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://apis.mappls.com/advancedmaps/api/f1d1a70335edaaca083fa1c6e7226052/map_sdk?v=3.0&layer=vector"></script>
   <link rel="stylesheet" href="./src/input.css">
       <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon.png">
 
@@ -18,41 +16,45 @@
 <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[600] bg-[#1E293B] text-white text-[13px] font-medium px-5 py-3 rounded-xl shadow-lg opacity-0 translate-y-4 pointer-events-none transition-all duration-300 max-w-[90vw] text-center" id="toast"></div>
 
 <nav class="bg-[#F5F5F4] border-b border-gray-50 sticky top-0 z-[200]">
-  <div class="max-w-[1280px] mx-auto px-6 flex items-center gap-4 h-16">
-    <a href="" class="flex items-center gap-2.5 no-underline shrink-0">
-      <div class="bg-[#D6453A] w-9 h-9 rounded-[10px] flex items-center justify-center">
+  <div class="max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-2 sm:gap-4 py-2.5 lg:flex-nowrap lg:py-0 lg:h-16">
+    <a href="index.html" class="order-1 flex items-center gap-2.5 no-underline shrink-0">
+      <div class="bg-[#D6453A] w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
       </div>
-      <a href="index.html" class="text-2xl font-custom font-bold md:text-4xl hover:text-[#D6453A] text-[#1E293B]">MediWay</a>
+      <span class="text-xl sm:text-2xl font-custom font-bold md:text-3xl lg:text-4xl hover:text-[#D6453A] text-[#1E293B]">MediWay</span>
     </a>
 
-    <div class="flex-1 max-w-[900px] flex items-center bg-white border-[1.5px] border-[#E2E8F0] rounded-xl overflow-hidden transition-all focus-within:border-[#D0423A] focus-within:shadow-[0_0_0_3px_rgba(208,66,58,.08)]">
+    <div class="order-3 w-full lg:order-2 lg:w-auto lg:flex-1 lg:max-w-[900px] flex items-center bg-white border-[1.5px] border-[#E2E8F0] rounded-xl overflow-hidden transition-all focus-within:border-[#D0423A] focus-within:shadow-[0_0_0_3px_rgba(208,66,58,.08)]">
       <input id="searchInput" type="text" placeholder="Doctor, specialty, hospital…" value=""
-        class="flex-1 border-none outline-none px-3.5 py-2.5 text-sm text-[#1E293B] bg-transparent placeholder-[#94A3B8] font-sans"/>
-      <div class="w-px h-5 bg-[#E2E8F0]"></div>
+        class="flex-1 min-w-0 border-none outline-none px-3 sm:px-3.5 py-2.5 text-sm text-[#1E293B] bg-transparent placeholder-[#94A3B8] font-sans"/>
+      <div class="w-px h-5 bg-[#E2E8F0] shrink-0"></div>
       <button id="locBtn" onclick="detectLocation()"
-        class="flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] text-[#64748B] cursor-pointer whitespace-nowrap bg-transparent border-none outline-none font-sans">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
-        <span id="locLabel">Location</span>
+        class="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2.5 text-[13px] text-[#64748B] cursor-pointer whitespace-nowrap bg-transparent border-none outline-none font-sans shrink-0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="shrink-0"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        <span id="locLabel" class="hidden sm:inline">Location</span>
       </button>
       <button onclick="applyFilters()"
-        class="bg-[#D0423A] hover:bg-[#B8362F] border-none px-4 py-3 text-white text-[13px] font-semibold cursor-pointer transition-colors font-sans">
+        class="bg-[#D0423A] hover:bg-[#B8362F] border-none px-3 sm:px-4 py-3 text-white text-[13px] font-semibold cursor-pointer transition-colors font-sans shrink-0">
         Search
       </button>
-      
-    </div>
-    <button id="signOutBtn" class="text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
 
-    <a href="#" class="flex items-center gap-1.5 bg-red-50 border-[1.5px] border-red-200 text-red-600 text-[13px] font-semibold px-3.5 py-2 rounded-[10px] no-underline whitespace-nowrap shrink-0 hover:bg-red-100">
-      <div class="pulse-dot w-2 h-2 bg-red-600 rounded-full"></div>
-      <span>Emergency</span>
-    </a>
+    </div>
+
+    <div class="order-2 ml-auto lg:order-3 lg:ml-0 flex items-center gap-2 sm:gap-4 shrink-0">
+      <button id="signOutBtn" class="hidden text-slate-600 hover:text-[#D6453A] text-sm font-semibold whitespace-nowrap">Sign Out</button>
+
+      <a href="#" class="flex items-center gap-1.5 bg-red-50 border-[1.5px] border-red-200 text-red-600 text-[13px] font-semibold px-2.5 sm:px-3.5 py-2 rounded-[10px] no-underline whitespace-nowrap shrink-0 hover:bg-red-100">
+        <div class="pulse-dot w-2 h-2 bg-red-600 rounded-full shrink-0"></div>
+        <span class="hidden sm:inline">Emergency</span>
+        <span class="sm:hidden">SOS</span>
+      </a>
+    </div>
   </div>
 </nav>
 
-<div class="bg-white border-b border-[#E2E8F0] sticky top-16 z-[150]">
-  <div class="max-w-[1280px] mx-auto px-6 h-12 flex items-center justify-between">
-    <div class="flex bg-slate-100 rounded-[9px] p-[3px] gap-0.5">
+<div class="bg-white border-b border-[#E2E8F0] lg:sticky lg:top-16 z-[150]">
+  <div class="max-w-[1280px] mx-auto px-4 sm:px-6 min-h-[48px] py-2 lg:py-0 lg:h-12 flex items-center justify-between gap-3">
+    <div class="flex bg-slate-100 rounded-[9px] p-[3px] gap-0.5 shrink-0">
       <button id="vt-list" onclick="setView('list')"
         class="vt-btn flex items-center gap-1.5 px-3.5 py-[5px] rounded-[7px] text-[13px] font-medium border-none cursor-pointer bg-white text-[#1E293B] shadow-sm font-sans transition-all">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -64,14 +66,21 @@
         Map
       </button>
     </div>
-    <div class="text-[13px] text-[#64748B]"><strong id="resultCount" class="text-[#1E293B]">7</strong> results near <span id="resultCity">Varanasi</span></div>
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="text-[13px] text-[#64748B] truncate"><strong id="resultCount" class="text-[#1E293B]">…</strong> results near <span id="resultCity">Varanasi</span></div>
+      <button type="button" id="filterToggle" onclick="toggleFilters()"
+        class="md:hidden flex items-center gap-1.5 shrink-0 border-[1.5px] border-[#E2E8F0] bg-white text-[#1E293B] rounded-[9px] px-3 py-[5px] text-[13px] font-medium cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Filters
+      </button>
+    </div>
   </div>
 </div>
 
-<div class="page-wrap max-w-[1280px] mx-auto px-6 pt-5 pb-12" id="pageWrap">
+<div class="page-wrap max-w-[1280px] mx-auto px-4 sm:px-6 pt-5 pb-12" id="pageWrap">
 
-  <div class="grid grid-cols-[280px_1fr] gap-6" id="listView">
-    <aside class="sidebar">
+  <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-5 lg:gap-6" id="listView">
+    <aside class="sidebar hidden md:block" id="filterSidebar">
       <div class="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] mb-3">
         <p class="text-[11px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-3">Type</p>
         <div class="flex flex-wrap gap-[7px]" id="typeFilter">
@@ -146,8 +155,8 @@
     </aside>
 
     <main class="flex flex-col gap-4">
-      <div class="flex items-center justify-between">
-        <div class="flex gap-2">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex gap-2 flex-wrap">
           <button class="sort-tab bg-[#1E293B] border-[#1E293B] text-white px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans transition-all" onclick="setSort('rating',this)">Top rated</button>
           <button class="sort-tab bg-white border-[#E2E8F0] text-[#64748B] px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans hover:border-[#1E293B]  transition-all" onclick="setSort('distance',this)">Nearest</button>
           <button class="sort-tab bg-white border-[#E2E8F0] text-[#64748B] px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans hover:border-[#1E293B]  transition-all" onclick="setSort('name',this)">A – Z</button>
@@ -157,7 +166,7 @@
 
       <div id="hospitalSection">
         <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-2.5">Nearby hospitals</p>
-        <div class="grid grid-cols-2 gap-2.5" id="hospitalGrid"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="hospitalGrid"></div>
       </div>
 
       <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8]" id="doctorLabel">Doctors</p>
@@ -172,16 +181,47 @@
     </main>
   </div>
 
-  <div class="split-layout hidden grid grid-cols-[1fr_420px] h-[calc(100vh-112px)] overflow-hidden -mx-6 -mt-5 -mb-12 border-t border-[#E2E8F0]" id="mapView">
-    <div class="map-pane relative h-full">
+  <div class="split-layout hidden grid grid-cols-1 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_420px] md:h-[calc(100vh-160px)] lg:h-[calc(100vh-112px)] md:overflow-hidden -mx-4 sm:-mx-6 -mt-5 -mb-12 border-t border-[#E2E8F0]" id="mapView">
+    <div class="map-pane relative h-[320px] sm:h-[420px] md:h-full bg-[#F3ECE4]">
       <div id="map" class="w-full h-full"></div>
-      <button onclick="centerMap()"
-        class="absolute bottom-5 right-5 z-[400] bg-white border-[1.5px] border-[#E2E8F0] rounded-[10px] px-3.5 py-2 text-[13px] font-semibold text-[#1E293B] cursor-pointer flex items-center gap-1.5 shadow-md hover:border-[#D0423A] hover:text-[#D0423A] font-sans">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-        Re-center
-      </button>
+
+      <div id="mapGestureHint" class="absolute inset-0 z-[6] flex items-center justify-center bg-[#1E293B]/45 text-white text-[14px] font-medium pointer-events-none opacity-0 transition-opacity duration-300">
+        Use two fingers to move the map
+      </div>
+
+      <div id="mapLoading" class="absolute inset-0 z-[5] flex items-center justify-center bg-[#F3ECE4] transition-opacity duration-500">
+        <div class="flex items-center gap-2.5 text-[13px] text-[#64748B]">
+          <div class="w-4 h-4 rounded-full border-2 border-[#E2E8F0] border-t-[#D0423A] animate-spin"></div>
+          Loading map…
+        </div>
+      </div>
+
+      <div class="absolute top-3 right-3 z-[4] flex flex-col gap-2">
+        <div class="mw-ctrl-group">
+          <button type="button" class="mw-ctrl" onclick="zoomMap(1)" aria-label="Zoom in">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <button type="button" class="mw-ctrl" onclick="zoomMap(-1)" aria-label="Zoom out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+          </button>
+        </div>
+        <div class="mw-ctrl-group">
+          <button type="button" class="mw-ctrl" onclick="centerMap()" aria-label="Center on my location" title="My location">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+          <button type="button" class="mw-ctrl" onclick="fitToResults()" aria-label="Show all results" title="Show all results">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="absolute top-3 left-3 z-[4] flex items-center gap-3 bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-full px-3 py-1.5 text-[11px] font-medium text-[#64748B] shadow-[0_2px_10px_rgba(15,23,42,.06)]">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#D0423A]"></span>Open</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#94A3B8]"></span>Closed</span>
+        <span class="hidden sm:flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-white border-[1.5px] border-[#D0423A]"></span>Hospital</span>
+      </div>
     </div>
-    <div class="map-results-pane bg-[#F8F2ED] border-l border-[#E2E8F0] h-full overflow-y-auto">
+    <div class="map-results-pane bg-[#F8F2ED] border-t md:border-t-0 md:border-l border-[#E2E8F0] max-h-[70vh] md:max-h-none md:h-full overflow-y-auto">
       <div class="px-4 py-3.5 pb-2.5 bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
         <div class="font-serif text-[17px] mb-2">Results near you</div>
         <div class="flex gap-1.5">
@@ -196,8 +236,8 @@
 
 </div>
 
-<div class="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,.15)] max-h-[80vh] overflow-y-auto transform translate-y-full transition-transform duration-300 ease-out" id="dirDrawer">
-  <div class="w-10 h-1 bg-[#E2E8F0] rounded mx-auto mt-3"></div>
+<div class="fixed bottom-0 left-0 right-0 md:bottom-12 md:left-4 md:right-auto md:w-[380px] z-[500] bg-white rounded-t-2xl md:rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,.15)] md:shadow-[0_18px_48px_rgba(15,23,42,.18)] md:border md:border-[#E2E8F0] max-h-[50vh] md:max-h-[calc(100vh-180px)] overflow-y-auto transform translate-y-[120%] transition-transform duration-300 ease-out" id="dirDrawer">
+  <div class="w-10 h-1 bg-[#E2E8F0] rounded mx-auto mt-3 md:hidden"></div>
   <div class="relative px-5 pt-3.5 pb-3 border-b border-[#E2E8F0]">
     <p class="font-serif text-[17px] text-[#1E293B] mb-0.5" id="dirDest">—</p>
     <p class="text-[12px] text-[#64748B]" id="dirAddr">—</p>
@@ -206,7 +246,7 @@
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-  <div class="flex gap-2 px-5 py-3 border-b border-[#E2E8F0]">
+  <div class="flex gap-2 px-5 py-3 border-b border-[#E2E8F0] overflow-x-auto">
     <button class="dir-mode-btn flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-[10px] border-[1.5px] border-[#D0423A] bg-[#FDECEA] cursor-pointer font-sans min-w-[72px] transition-all" onclick="selectMode('drive',this)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="11" width="22" height="7" rx="2"/><path d="M5 11V8a7 7 0 0 1 14 0v3"/><circle cx="7" cy="18" r="1"/><circle cx="17" cy="18" r="1"/></svg>
       <span class="text-[11px] font-medium text-[#D0423A]">Drive</span>
@@ -224,7 +264,7 @@
     </button>
   </div>
   <div class="dir-steps px-5 py-3.5" id="dirSteps"></div>
-  <div class="px-5 py-3 flex gap-2.5">
+  <div class="px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex gap-2.5">
     <a class="flex-1 bg-[#D0423A] hover:bg-[#B8362F] text-white border-none py-[11px] rounded-[10px] text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-[7px] font-sans no-underline" id="dirGmapsLink" href="#" target="_blank">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       Open in Google Maps
@@ -246,11 +286,11 @@
       <span class="hidden sm:block text-slate-500 text-sm">Healthcare discovery for travelers in India</span>
     </div>
 
-    <div class="flex items-center gap-6">
+    <div class="flex items-center justify-center flex-wrap gap-x-5 gap-y-2">
       <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Privacy</a>
       <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Terms</a>
       <a href="mailto:shaurya12joshi@gmail.com" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Contact</a>
-      <a href="https://github.com/Shaurya12joshi/MEDROUTE" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
+      <a href="https://github.com/Shaurya12joshi/MediWay" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
     </div>
 
   </div>
@@ -270,11 +310,12 @@
                 window.location.reload();
             };
         } else {
-            btn.textContent = 'Join Waitlist';
+            btn.textContent = 'Sign In';
             btn.onclick = function () {
                 window.location.href = 'auth.html';
             };
         }
+        btn.classList.remove('hidden');
     }
 
     updateAuthButton();

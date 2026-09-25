@@ -7,35 +7,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
 
-  <script type="module" crossorigin src="/assets/profile-tytkWoF4.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/supabase-D_nnYTw3.js">
-  <link rel="stylesheet" crossorigin href="/assets/supabase-hpVt3zHM.css">
+  <script type="module" crossorigin src="/assets/profile-BhzZVBBR.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-BwBqtc7d.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-CE7IOkxl.css">
 </head>
 <body class="font-sans text-text min-h-screen bg-bg antialiased m-0 p-0 box-border">
 
-<nav class="sticky top-0 z-[200] bg-[#F5F5F4]  backdrop-blur-[12px] border-b border-border h-[60px] flex items-center px-[24px]">
-  <div class="max-w-[1280px] w-full mx-auto flex items-center gap-[12px]">
-    <a href="#" class="flex items-center gap-[9px] no-underline">
+<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-border h-[60px] flex items-center px-[16px] sm:px-[24px]">
+  <div class="max-w-[1280px] w-full mx-auto flex items-center gap-[8px] sm:gap-[12px]">
+    <a href="index.html" class="flex items-center gap-[9px] no-underline shrink-0 min-w-0">
       <div class="w-[34px] h-[34px] rounded-[10px] bg-red flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
       </div>
-      <span href="profile.html" class="font-custom text-[29px] font-bold text-text hover:text-[#D6453A]">MediWay</span>
+      <span class="font-custom text-[22px] sm:text-[29px] font-bold text-text hover:text-[#D6453A]">MediWay</span>
     </a>
     <div style="flex:1"></div>
-    
-    <a href="searchResult.html" class="flex items-center gap-[5px] text-[13px] text-faint no-underline transition-colors duration-150 hover:text-text">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to results
+
+    <a href="searchResult.html" title="Back to results" class="flex items-center gap-[5px] text-[13px] text-faint no-underline transition-colors duration-150 hover:text-text shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="hidden md:inline">Back to results</span>
     </a>
-    <button id="signOutBtn" class="text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
-    <a href="#" class="flex items-center gap-[6px] bg-[#FEF2F2] border-[1.5px] border-[#FECACA] text-[#DC2626] text-[12px] font-semibold py-[6px] px-[12px] rounded-[8px] no-underline whitespace-nowrap">
-      <div class="w-[7px] h-[7px] rounded-full bg-[#DC2626] animate-pulse-dot"></div>
-      Emergency
+    <button id="signOutBtn" class="hidden text-slate-600 hover:text-[#D6453A] text-sm font-semibold whitespace-nowrap shrink-0">Sign Out</button>
+    <a href="#" class="flex items-center gap-[6px] bg-[#FEF2F2] border-[1.5px] border-[#FECACA] text-[#DC2626] text-[12px] font-semibold py-[6px] px-[9px] sm:px-[12px] rounded-[8px] no-underline whitespace-nowrap shrink-0">
+      <div class="w-[7px] h-[7px] rounded-full bg-[#DC2626] animate-pulse-dot shrink-0"></div>
+      <span class="hidden sm:inline">Emergency</span>
+      <span class="sm:hidden">SOS</span>
     </a>
   </div>
 </nav>
 
-<div class="max-w-[1280px] mx-auto pt-[32px] px-[24px] pb-[140px]">
+<div class="max-w-[1280px] mx-auto pt-[24px] sm:pt-[32px] px-[16px] sm:px-[24px] pb-[160px]">
   <div id="profileContent">
     <div class="text-center py-[64px] text-faint text-[14px]">
       <div class="w-[32px] h-[32px] border-[2px] border-border border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
@@ -44,13 +45,13 @@
   </div>
 </div>
 
-<div class="fixed bottom-0 left-0 right-0 z-[200] bg-[rgba(255,255,255,.97)] backdrop-blur-[12px] border-t border-border py-[12px] px-[24px] hidden" id="ctaBar">
-  <div class="max-w-[1280px] mx-auto flex items-center justify-between gap-[12px]">
-    <div>
+<div class="fixed bottom-0 left-0 right-0 z-[200] bg-[rgba(255,255,255,.97)] backdrop-blur-[12px] border-t border-border py-[12px] px-[16px] sm:px-[24px] pb-[max(12px,env(safe-area-inset-bottom))] hidden" id="ctaBar">
+  <div class="max-w-[1280px] mx-auto flex items-center justify-between gap-[12px] flex-wrap">
+    <div class="min-w-0">
       <div class="font-serif text-[15px] text-text" id="ctaName">—</div>
       <div class="text-[12px] text-faint mt-[2px]" id="ctaSpec">—</div>
     </div>
-    <div class="flex gap-[8px]">
+    <div class="flex gap-[8px] shrink-0">
       <button class="flex items-center gap-[6px] bg-white text-text border-[1.5px] border-border py-[9px] px-[16px] rounded-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 hover:border-red hover:text-red font-sans" id="ctaDir">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
         Directions

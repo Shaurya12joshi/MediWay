@@ -11,24 +11,24 @@
 </head>
 <body class="font-sans text-text min-h-screen bg-bg antialiased m-0 p-0">
 
-<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-border h-[60px] flex items-center px-[24px]">
-  <div class="max-w-[640px] w-full mx-auto flex items-center gap-[12px]">
-    <div class="flex items-center gap-[9px]">
+<nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-border h-[60px] flex items-center px-[16px] sm:px-[24px]">
+  <div class="max-w-[640px] w-full mx-auto flex items-center gap-[8px] sm:gap-[12px]">
+    <a href="index.html" class="flex items-center gap-[9px] no-underline shrink-0">
       <div class="w-[34px] h-[34px] rounded-[10px] bg-red flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
       </div>
-      <span class="font-custom text-[29px] font-bold hover:text-[#D6453A] hover:cu  text-text">MediWay</span>
-    </div>
-    <div style="flex:1"></div>
-    <a id="backLink" href="searchResult.html" class="flex items-center gap-[5px] text-[13px] text-faint no-underline hover:text-text">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to profile
+      <span class="font-custom text-[22px] sm:text-[29px] font-bold hover:text-[#D6453A] text-text">MediWay</span>
     </a>
-    <button id="signOutBtn" class="text-slate-600 hover:text-[#D6453A] text-sm font-semibold">Sign Out</button>
+    <div style="flex:1"></div>
+    <a id="backLink" href="searchResult.html" title="Back to profile" class="flex items-center gap-[5px] text-[13px] text-faint no-underline hover:text-text shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="hidden sm:inline">Back to profile</span>
+    </a>
+    <button id="signOutBtn" class="hidden text-slate-600 hover:text-[#D6453A] text-sm font-semibold whitespace-nowrap shrink-0">Sign Out</button>
   </div>
 </nav>
 
-<div class="max-w-[640px] mx-auto px-[24px] py-[36px]" id="pageBody">
+<div class="max-w-[640px] mx-auto px-[16px] sm:px-[24px] py-[28px] sm:py-[36px]" id="pageBody">
   <div class="text-center py-[64px] text-faint text-[14px]" id="loadingState">
     <div class="w-[32px] h-[32px] border-[2px] border-border border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
     Loading…
@@ -51,11 +51,11 @@
       <span class="hidden sm:block text-slate-500 text-sm">Healthcare discovery for travelers in India</span>
     </div>
 
-    <div class="flex items-center gap-6">
+    <div class="flex items-center justify-center flex-wrap gap-x-5 gap-y-2">
       <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Privacy</a>
       <a href="#" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Terms</a>
       <a href="mailto:shaurya12joshi@gmail.com" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">Contact</a>
-      <a href="https://github.com/Shaurya12joshi/MEDROUTE" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
+      <a href="https://github.com/Shaurya12joshi/MediWay" class="text-slate-500 text-sm hover:text-slate-900 transition-colors">GitHub</a>
     </div>
 
   </div>
@@ -107,16 +107,16 @@ function render(doctor){
   document.getElementById('backLink').href = `profile.html?id=${doctor.id}`;
   document.getElementById('pageBody').innerHTML = `
     <div class="mb-[24px]">
-      <h1 class="font-serif text-[26px] text-text leading-[1.15]">Rate your visit</h1>
+      <h1 class="font-serif text-[22px] sm:text-[26px] text-text leading-[1.15]">Rate your visit</h1>
       <p class="text-[13px] text-faint mt-[4px]">with <strong class="text-text">${escapeHtml(doctor.name)}</strong> · takes about 20 seconds</p>
     </div>
 
-    <form id="reviewForm" class="bg-white border border-border rounded-[18px] p-[26px] flex flex-col gap-[26px]">
+    <form id="reviewForm" class="bg-white border border-border rounded-[18px] p-[18px] sm:p-[26px] flex flex-col gap-[22px] sm:gap-[26px]">
 
       <div>
         <label class="block text-[13px] font-semibold text-text mb-[12px]">Overall, how was it?</label>
         <div class="flex gap-[8px]" id="starPicker">
-          ${[1,2,3,4,5].map(n => `<button type="button" data-val="${n}" class="star-btn text-[38px] leading-none cursor-pointer bg-transparent border-none p-0" style="color:#D1D5DB">★</button>`).join('')}
+          ${[1,2,3,4,5].map(n => `<button type="button" aria-label="${n} star${n===1?'':'s'}" data-val="${n}" class="star-btn text-[32px] sm:text-[38px] leading-none cursor-pointer bg-transparent border-none p-0" style="color:#D1D5DB">★</button>`).join('')}
         </div>
         <p class="text-[12px] text-red mt-[8px] hidden" id="ratingError">Please select a star rating.</p>
       </div>
@@ -345,11 +345,12 @@ init();
                 window.location.reload();
             };
         } else {
-            btn.textContent = 'Join Waitlist';
+            btn.textContent = 'Sign In';
             btn.onclick = function () {
                 window.location.href = 'auth.html';
             };
         }
+        btn.classList.remove('hidden');
     }
 
     updateAuthButton();

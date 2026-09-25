@@ -90,6 +90,8 @@ function updateClock() {
       text.textContent = 'Locating nearest emergency services…';
     }, 3000);
   }
+  // Loaded as a module (so Vite bundles it); expose what inline onclick handlers call
+  window.sosActivate = sosActivate;
 
 
 const testimonialsMd = [

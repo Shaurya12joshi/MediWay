@@ -15,3 +15,147 @@
   }
 
 }
+
+/* ---------- Search map (MapLibre) ---------- */
+
+/* Doctor pin: teardrop with initials. Colour flips to slate when closed. */
+.mw-pin {
+  --pin: #D0423A;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  background: var(--pin);
+  border: 2.5px solid #fff;
+  box-shadow: 0 6px 16px rgba(30, 41, 59, .22);
+  cursor: pointer;
+  transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .18s ease;
+}
+.mw-pin span {
+  transform: rotate(45deg);
+  color: #fff;
+  font: 600 12px/1 "DM Sans", sans-serif;
+  letter-spacing: .02em;
+}
+.mw-pin.is-closed { --pin: #94A3B8; }
+/* Scales from the tip so the pin stays on its spot */
+.mw-pin-wrap { transform-origin: 50% 100%; transition: transform .2s ease; }
+.mw-pin:hover,
+.mw-pin.is-active {
+  transform: rotate(-45deg) scale(1.16);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--pin) 22%, transparent), 0 10px 22px rgba(30, 41, 59, .28);
+  z-index: 2;
+}
+/* MapLibre positions markers with an inline transform on the wrapper; lift active ones above neighbours */
+.maplibregl-marker:has(.is-active) { z-index: 3; }
+
+.mw-hospital {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #fff;
+  color: #D0423A;
+  border: 2px solid #D0423A;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, .16);
+  cursor: pointer;
+  transition: transform .18s ease;
+}
+.mw-hospital:hover { transform: scale(1.12); }
+
+/* Region/country zoom: pins become small dots, hospitals hide */
+.mw-far .mw-pin-wrap { transform: scale(.42); }
+.mw-far .mw-pin span { opacity: 0; }
+/* ...except the selected doctor, which stays a full pin */
+.mw-far .mw-pin-wrap:has(.is-active) { transform: none; }
+.mw-far .mw-pin.is-active span { opacity: 1; }
+.mw-far .maplibregl-marker:has(.mw-hospital) { visibility: hidden; pointer-events: none; }
+
+/* "You are here": blue dot with a soft sonar ring */
+.mw-user {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, .45);
+  cursor: pointer;
+}
+.mw-user::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, .35);
+  animation: mw-sonar 2.2s ease-out infinite;
+  z-index: -1;
+}
+@keyframes mw-sonar {
+  from { transform: scale(1);   opacity: .9; }
+  to   { transform: scale(3.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mw-user::before { animation: none; }
+  .mw-pin, .mw-hospital { transition: none; }
+}
+
+/* Popups — the Mappls SDK ignores popup classNames, so scope to the map container */
+#map .maplibregl-popup-content {
+  padding: 14px;
+  border-radius: 14px;
+  font-family: "DM Sans", sans-serif;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, .16), 0 0 0 1px rgba(15, 23, 42, .04);
+}
+#map .maplibregl-popup-close-button {
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: #94A3B8;
+  font-size: 16px;
+  line-height: 1;
+}
+#map .maplibregl-popup-close-button:hover { background: #F1F5F9; color: #1E293B; }
+#map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: #fff; }
+
+/* Map controls */
+.mw-ctrl-group {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(10px);
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .08);
+}
+.mw-ctrl {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.mw-ctrl + .mw-ctrl { border-top: 1px solid #EEF2F6; }
+.mw-ctrl:hover { background: #FDECEA; color: #D0423A; }
+.mw-ctrl:focus-visible { outline: 2px solid #D0423A; outline-offset: -2px; }
+
+/* Result card linked to the selected pin */
+.map-card.active {
+  border-color: #D0423A;
+  background: #FFF8F7;
+  box-shadow: 0 0 0 1px #D0423A, 0 4px 14px rgba(208, 66, 58, .12);
+}

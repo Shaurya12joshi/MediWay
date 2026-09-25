@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # These VITE_* values are meant to ship in the browser bundle (Vite inlines them):
+  # the Supabase anon key is protected by Row Level Security, the Mappls key by its
+  # domain whitelist. Tell Netlify's secrets scanner they are expected there.
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_MAPPLS_KEY"
