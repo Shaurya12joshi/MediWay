@@ -12,7 +12,7 @@
 <body class="font-sans text-text min-h-screen bg-bg antialiased m-0 p-0 box-border">
 
 <nav class="sticky top-0 z-[200] bg-[#F5F5F4] backdrop-blur-[12px] border-b border-border h-[60px] flex items-center px-[16px] sm:px-[24px]">
-  <div class="max-w-[1280px] w-full mx-auto flex items-center gap-[8px] sm:gap-[12px]">
+  <div class="max-w-[1280px] 2xl:max-w-[1440px] w-full mx-auto flex items-center gap-[8px] sm:gap-[12px]">
     <a href="index.html" class="flex items-center gap-[9px] no-underline shrink-0 min-w-0">
       <div class="w-[34px] h-[34px] rounded-[10px] bg-red flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
@@ -34,7 +34,7 @@
   </div>
 </nav>
 
-<div class="max-w-[1280px] mx-auto pt-[24px] sm:pt-[32px] px-[16px] sm:px-[24px] pb-[160px]">
+<div class="max-w-[1280px] 2xl:max-w-[1440px] mx-auto pt-[24px] sm:pt-[32px] px-[16px] sm:px-[24px] pb-[160px]">
   <div id="profileContent">
     <div class="text-center py-[64px] text-faint text-[14px]">
       <div class="w-[32px] h-[32px] border-[2px] border-border border-t-red rounded-full animate-spin mx-auto mb-[12px]"></div>
@@ -44,7 +44,7 @@
 </div>
 
 <div class="fixed bottom-0 left-0 right-0 z-[200] bg-[rgba(255,255,255,.97)] backdrop-blur-[12px] border-t border-border py-[12px] px-[16px] sm:px-[24px] pb-[max(12px,env(safe-area-inset-bottom))] hidden" id="ctaBar">
-  <div class="max-w-[1280px] mx-auto flex items-center justify-between gap-[12px] flex-wrap">
+  <div class="max-w-[1280px] 2xl:max-w-[1440px] mx-auto flex items-center justify-between gap-[12px] flex-wrap">
     <div class="min-w-0">
       <div class="font-serif text-[15px] text-text" id="ctaName">—</div>
       <div class="text-[12px] text-faint mt-[2px]" id="ctaSpec">—</div>
@@ -54,13 +54,13 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
         Directions
       </button>
-      <button class="bg-red hidden hover:bg-red-dark text-white border-none py-[9px] px-[20px] rounded-[9px] text-[13px] font-semibold cursor-pointer transition-colors duration-150 font-sans">Book appointment →</button>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { supabase } from './js/supabase.js';
+import { readOrigin, distanceKm, directionsUrl } from './js/origin.js';
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function timeToMins(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
@@ -130,14 +130,19 @@ function scheduleText(doctor){
   }).join(' · ');
 }
 
-const USER_LAT = 25.31668000, USER_LNG = 83.01041000;
+// Set by the search page: the user's detected position, or the centre of the city they browsed
+const ORIGIN = readOrigin();
 function dirUrl(d){
   const dest = `${d.hospital || ''} ${d.hospital_address || ''}`.trim();
-  return `https://www.google.com/maps/dir/?api=1&origin=${USER_LAT},${USER_LNG}&destination=${encodeURIComponent(dest)}`;
+  return directionsUrl(dest, ORIGIN);
+}
+function distanceText(d){
+  if (!ORIGIN || !Number.isFinite(+d.lat) || !Number.isFinite(+d.lng)) return null;
+  return Math.round(distanceKm(ORIGIN.lat, ORIGIN.lng, +d.lat, +d.lng) * 10) / 10;
 }
 function starsHtml(r, sz=14){
   let out='<span class="inline-flex gap-[1px] leading-[1]">';
-  for (let i=1;i<=5;i++) out+=`<span style="font-size:${sz}px;color:${i<=Math.round(r)?'#F59E0B':'#D1D5DB'}">★</span>`;
+  for (let i=1;i<=5;i++) out+=`<span style="font-size:${sz/16}rem;color:${i<=Math.round(r)?'#F59E0B':'#D1D5DB'}">★</span>`;
   return out+'</span>';
 }
 function escapeHtml(s){
@@ -285,7 +290,7 @@ function buildProfile(d){
   const displayReviewCount = total;
 
   document.getElementById('profileContent').innerHTML = `
-<div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-[24px] items-start">
+<div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] 2xl:grid-cols-[1fr_360px] gap-[24px] items-start">
   <div class="flex flex-col gap-[20px] min-w-0">
 
     <div class="bg-white rounded-[18px] border border-border overflow-hidden">
@@ -305,14 +310,14 @@ function buildProfile(d){
             </div>
             <div class="bg-bg border border-border rounded-[14px] py-[10px] px-[14px] sm:py-[12px] sm:px-[18px] text-center shrink-0 min-w-[96px] sm:min-w-[110px]">
               <div class="font-serif text-[28px] sm:text-[36px] leading-[1] text-text">${displayRating}</div>
-              <div style="margin-top:6px">${starsHtml(+displayRating||0,14)}</div>
+              <div class="mt-[6px]">${starsHtml(+displayRating||0,14)}</div>
               <div class="text-[11px] text-faint mt-[4px]">${displayReviewCount} reviews</div>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-x-[20px] gap-y-[10px] mt-[20px] pt-[18px] border-t border-border">
             <div class="flex items-center gap-[6px] text-[13px] text-muted">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
-              ${escapeHtml(d.hospital || '')} · <strong class="text-text font-semibold">${d.distance_km ?? '—'} km away</strong>
+              ${escapeHtml(d.hospital || '')}${distanceText(d) != null ? ` · <strong class="text-text font-semibold">${distanceText(d)} km away</strong>` : ''}
             </div>
             <div class="flex items-center gap-[6px] text-[13px] text-muted">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -354,7 +359,7 @@ function buildProfile(d){
       <div class="flex items-center gap-[20px] sm:gap-[40px]">
         <div class="text-center shrink-0">
           <div class="font-serif text-[44px] sm:text-[68px] leading-[1] text-text">${avg}</div>
-          <div style="margin-top:8px">${starsHtml(+avg||0,17)}</div>
+          <div class="mt-[8px]">${starsHtml(+avg||0,17)}</div>
           <div class="text-[11px] text-faint mt-[8px]">out of 5.0</div>
         </div>
         <div class="flex-1 flex flex-col gap-[9px]">
@@ -393,10 +398,6 @@ function buildProfile(d){
   <div class="lg:sticky lg:top-[76px] flex flex-col gap-[16px] w-full min-w-0">
 
     <div class="bg-white rounded-[18px] border border-border overflow-hidden">
-      <div class="p-[20px_22px_16px] border-b border-border">
-        <h3 class="font-serif hidden text-[20px] text-text">Book appointment</h3>
-        <p class="text-[12px] text-faint mt-[3px]">Confirm your slot in seconds</p>
-      </div>
       <div class="p-[20px_22px] flex flex-col gap-[14px]">
         <div class="bg-[#F0FDF4] border border-[#BBF7D0] rounded-[12px] p-[11px_14px] flex items-center justify-between">
           <div class="flex items-center gap-[7px] text-[12px] text-muted font-medium"><div class="w-[7px] h-[7px] rounded-full bg-[#22C55E] shrink-0"></div>Next available</div>
@@ -410,10 +411,6 @@ function buildProfile(d){
             <span class="text-[11px] text-faint">/ visit</span>
           </div>
         </div>` : ''}
-        <button class="w-full  hidden bg-red text-white border-none p-[14px] rounded-[11px] text-[14px] font-semibold cursor-pointer transition-all duration-150 hover:bg-red-dark active:scale-[.98] flex items-center justify-center gap-[7px] font-sans">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Book appointment →
-        </button>
         <a href="${dirUrl(d)}" target="_blank" class="w-full bg-white text-text border-[1.5px] border-border p-[12px] rounded-[11px] text-[13px] font-semibold cursor-pointer transition-all duration-150 hover:border-red hover:text-red flex items-center justify-center gap-[7px] no-underline font-sans">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
           Get directions

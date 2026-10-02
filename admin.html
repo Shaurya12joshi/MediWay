@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MediWay — Review Verification</title>
+  <title>MediWay — Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./src/input.css">
   <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon.png">
@@ -50,7 +50,7 @@ function escapeHtml(s){
 }
 function starsHtml(r){
   let out='';
-  for (let i=1;i<=5;i++) out+=`<span style="color:${i<=r?'#F59E0B':'#D1D5DB'};font-size:13px;">★</span>`;
+  for (let i=1;i<=5;i++) out+=`<span class="text-[13px]" style="color:${i<=r?'#F59E0B':'#D1D5DB'}">★</span>`;
   return out;
 }
 
@@ -143,7 +143,7 @@ async function getSignedUrl(path){
 
 async function renderQueue(){
   const reviews = await fetchPendingReviews();
-  const body = document.getElementById('pageBody');
+  const body = document.getElementById('tabBody');
 
   if (!reviews.length){
     body.innerHTML = `<div class="text-center py-[64px]"><p class="font-serif text-[22px] mb-[8px]">Queue is empty</p><p class="text-[14px] text-[#94A3B8]">No proof photos waiting on review.</p></div>`;
@@ -199,8 +199,200 @@ async function renderQueue(){
       if (error) { console.error(error); showToast('Something went wrong — try again'); btn.disabled = false; return; }
       showToast(action === 'approve' ? 'Marked as verified' : 'Rejected');
       renderQueue();
+      refreshTabCounts();
     });
   });
+}
+
+// ---------- Tabs ----------
+
+const TAB_CLS = 'tab-btn px-[14px] py-[7px] rounded-[9px] text-[13px] font-semibold border-none cursor-pointer font-sans transition-colors';
+
+function renderShell(){
+  document.getElementById('pageBody').innerHTML = `
+    <div class="flex gap-[6px] mb-[22px] bg-[#EFEDE8] p-[4px] rounded-[12px] w-fit">
+      <button class="${TAB_CLS}" data-tab="reviews">Review proofs <span class="tab-count opacity-60" data-count="reviews"></span></button>
+      <button class="${TAB_CLS}" data-tab="places">Imported places <span class="tab-count opacity-60" data-count="places"></span></button>
+    </div>
+    <div id="tabBody"></div>`;
+  document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  refreshTabCounts();
+}
+
+async function showTab(tab){
+  sessionStorage.setItem('mw.adminTab', tab);
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const on = b.dataset.tab === tab;
+    b.classList.toggle('bg-white', on); b.classList.toggle('text-[#1E293B]', on); b.classList.toggle('shadow-sm', on);
+    b.classList.toggle('bg-transparent', !on); b.classList.toggle('text-[#94A3B8]', !on);
+  });
+  document.getElementById('tabBody').innerHTML = `<div class="text-center py-[48px] text-[#94A3B8] text-[14px]">Loading…</div>`;
+  if (tab === 'places') await renderPlaces(); else await renderQueue();
+}
+
+async function refreshTabCounts(){
+  const [reviews, places] = await Promise.all([
+    supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('proof_status', 'pending'),
+    supabase.from('places_staging').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+  ]);
+  const set = (k, n) => { const el = document.querySelector(`[data-count="${k}"]`); if (el) el.textContent = n ? `(${n})` : ''; };
+  set('reviews', reviews.count); set('places', places.count);
+}
+
+// ---------- Imported places ----------
+// Rows come from scripts/import-places.mjs. Approve publishes to the site; merge folds a duplicate
+// into the existing listing; reject hides it for good. All three go through review_places().
+
+const KIND_COLORS = { hospital: '#D0423A', clinic: '#2563EB', pharmacy: '#16A34A', lab: '#7C3AED' };
+const PAGE = 40;
+const HIGH_CONFIDENCE = 0.9;
+const placesState = { city: null, kind: 'all', offset: 0 };
+
+function sourceLinks(p){
+  return (p.sources || []).map(s => s.source === 'osm'
+    ? `<a href="https://www.openstreetmap.org/${escapeHtml(s.id)}" target="_blank" rel="noopener" class="underline hover:text-[#1E293B]">OSM</a>`
+    : `<span>${escapeHtml(s.source === 'overture' ? 'Overture' : s.source)}</span>`).join(' + ');
+}
+
+function placesQuery(select, opts){
+  let q = supabase.from('places_staging').select(select, opts)
+    .eq('status', 'pending').eq('city', placesState.city);
+  if (placesState.kind !== 'all') q = q.eq('kind', placesState.kind);
+  return q;
+}
+
+async function renderPlaces(){
+  const body = document.getElementById('tabBody');
+  const { data: cities, error } = await supabase.from('cities').select('slug, name, launched').order('created_at');
+  if (error) {
+    body.innerHTML = `<div class="text-center py-[48px] text-[14px] text-[#94A3B8]">Couldn't load cities. Have the Supabase migrations been run?</div>`;
+    return;
+  }
+  placesState.city ??= cities[0]?.slug;
+  placesState.offset = 0;
+
+  const kinds = ['all', 'hospital', 'clinic', 'pharmacy', 'lab'];
+  body.innerHTML = `
+    <div class="flex flex-wrap items-end justify-between gap-[12px] mb-[16px]">
+      <div>
+        <h1 class="font-serif text-[24px]">Imported places</h1>
+        <p class="text-[13px] text-[#94A3B8] mt-[3px]" id="placesSummary">…</p>
+      </div>
+      <button id="bulkApprove" class="hidden bg-[#16A34A] hover:bg-[#15803D] text-white border-none px-[14px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans"></button>
+    </div>
+    <div class="flex flex-wrap items-center gap-[8px] mb-[18px]">
+      <select id="citySelect" class="border-[1.5px] border-[#E6E6E1] rounded-[9px] px-[10px] py-[7px] text-[13px] bg-white font-sans">
+        ${cities.map(c => `<option value="${escapeHtml(c.slug)}" ${c.slug === placesState.city ? 'selected' : ''}>${escapeHtml(c.name)}${c.launched ? '' : ' (not launched)'}</option>`).join('')}
+      </select>
+      ${kinds.map(k => `<button data-kind="${k}" class="kind-chip px-[11px] py-[6px] rounded-[8px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans ${k === placesState.kind ? 'border-[#D0423A] bg-[#FDECEA] text-[#D0423A]' : 'border-[#E6E6E1] bg-white text-[#64748B]'}">${k === 'all' ? 'All' : k[0].toUpperCase() + k.slice(1)}</button>`).join('')}
+    </div>
+    <div class="flex flex-col gap-[10px]" id="placesList"></div>
+    <button id="placesMore" class="hidden mt-[14px] w-full py-[10px] rounded-[10px] border-[1.5px] border-dashed border-[#D6D3CC] bg-transparent text-[13px] text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A]">Load more</button>`;
+
+  document.getElementById('citySelect').addEventListener('change', e => { placesState.city = e.target.value; renderPlaces(); });
+  document.querySelectorAll('.kind-chip').forEach(b => b.addEventListener('click', () => { placesState.kind = b.dataset.kind; renderPlaces(); }));
+  document.getElementById('placesMore').addEventListener('click', () => loadPlacesPage());
+  document.getElementById('bulkApprove').addEventListener('click', bulkApprove);
+
+  if (!placesState.city) { document.getElementById('placesSummary').textContent = 'Add a city first.'; return; }
+  await Promise.all([loadPlacesPage(), refreshPlacesSummary()]);
+}
+
+async function refreshPlacesSummary(){
+  const [{ count }, { count: high }] = await Promise.all([
+    placesQuery('id', { count: 'exact', head: true }),
+    placesQuery('id', { count: 'exact', head: true }).gte('confidence', HIGH_CONFIDENCE),
+  ]);
+  document.getElementById('placesSummary').textContent = count
+    ? `${count} waiting for review · highest confidence first`
+    : 'Nothing waiting. Run scripts/import-places.mjs to import a city.';
+  const bulk = document.getElementById('bulkApprove');
+  bulk.classList.toggle('hidden', !high);
+  bulk.textContent = `✓ Accept all ≥ ${HIGH_CONFIDENCE * 100}% (${high})`;
+  bulk.dataset.count = high || 0;
+}
+
+async function loadPlacesPage(){
+  const { data, error } = await placesQuery('*')
+    .order('confidence', { ascending: false }).order('id')
+    .range(placesState.offset, placesState.offset + PAGE - 1);
+  const list = document.getElementById('placesList');
+  if (error) { console.error(error); list.insertAdjacentHTML('beforeend', `<p class="text-[13px] text-[#D0423A]">Couldn't load places.</p>`); return; }
+  if (!data.length && placesState.offset === 0) {
+    list.innerHTML = `<div class="text-center py-[48px]"><p class="font-serif text-[20px] mb-[6px]">Queue is empty</p><p class="text-[13px] text-[#94A3B8]">No imported places waiting for this filter.</p></div>`;
+  }
+
+  // Names of the live listings these might duplicate
+  const matchIds = [...new Set(data.map(p => p.match_id).filter(Boolean))];
+  const matches = {};
+  if (matchIds.length) {
+    const { data: rows } = await supabase.from('hospitals').select('id, name').in('id', matchIds);
+    for (const r of rows || []) matches[r.id] = r.name;
+  }
+
+  for (const p of data) list.appendChild(placeCard(p, matches));
+  placesState.offset += data.length;
+  document.getElementById('placesMore').classList.toggle('hidden', data.length < PAGE);
+}
+
+function placeCard(p, matches){
+  const color = KIND_COLORS[p.kind] || '#64748B';
+  const card = document.createElement('div');
+  card.className = 'bg-white border border-[#E6E6E1] rounded-[14px] p-[14px] sm:p-[16px] flex flex-col sm:flex-row sm:items-center gap-[12px]';
+  const pct = Math.round(p.confidence * 100);
+  card.innerHTML = `
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-[8px] flex-wrap mb-[3px]">
+        <span class="text-[10px] font-bold uppercase tracking-[.08em] px-[7px] py-[2px] rounded-[5px]" style="color:${color};background:${color}14">${escapeHtml(p.kind)}</span>
+        <span class="text-[11px] font-semibold ${pct >= 90 ? 'text-[#16A34A]' : pct >= 75 ? 'text-[#64748B]' : 'text-[#B45309]'}">${pct}% confident</span>
+        <span class="text-[11px] text-[#94A3B8]">${sourceLinks(p)}</span>
+      </div>
+      <div class="font-serif text-[17px] text-[#1E293B] break-words">${escapeHtml(p.name)}</div>
+      <div class="text-[12px] text-[#64748B] mt-[2px] break-words">
+        ${escapeHtml(p.address || 'No address')}${p.phone ? ` · ${escapeHtml(p.phone)}` : ''}${p.opening_hours ? ` · ${escapeHtml(p.opening_hours)}` : ''}
+        · <a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}" target="_blank" rel="noopener" class="text-[#D0423A] underline">check on map</a>
+      </div>
+      ${p.match_id ? `<div class="text-[12px] text-[#B45309] mt-[6px]">Possible duplicate of <strong>${escapeHtml(matches[p.match_id] || p.match_id)}</strong> (already live)</div>` : ''}
+    </div>
+    <div class="flex gap-[6px] shrink-0">
+      ${p.match_id
+        ? `<button data-decision="merge" class="bg-[#1E293B] hover:bg-black text-white border-none px-[12px] py-[8px] rounded-[9px] text-[12px] font-semibold cursor-pointer font-sans">Merge</button>
+           <button data-decision="approve" class="bg-white border-[1.5px] border-[#E6E6E1] text-[#3F3F46] px-[12px] py-[8px] rounded-[9px] text-[12px] font-semibold cursor-pointer font-sans hover:border-[#16A34A] hover:text-[#16A34A]">Add as new</button>`
+        : `<button data-decision="approve" class="bg-[#16A34A] hover:bg-[#15803D] text-white border-none px-[12px] py-[8px] rounded-[9px] text-[12px] font-semibold cursor-pointer font-sans">Approve</button>`}
+      <button data-decision="reject" class="bg-white border-[1.5px] border-[#E6E6E1] text-[#3F3F46] px-[12px] py-[8px] rounded-[9px] text-[12px] font-semibold cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A]">Reject</button>
+    </div>`;
+  card.querySelectorAll('button[data-decision]').forEach(btn => btn.addEventListener('click', async () => {
+    card.querySelectorAll('button').forEach(b => b.disabled = true);
+    const ok = await reviewPlaces([p.id], btn.dataset.decision);
+    if (!ok) { card.querySelectorAll('button').forEach(b => b.disabled = false); return; }
+    card.remove();
+    placesState.offset = Math.max(0, placesState.offset - 1);
+    showToast({ approve: 'Published', merge: 'Merged into the existing listing', reject: 'Rejected' }[btn.dataset.decision]);
+    refreshPlacesSummary(); refreshTabCounts();
+  }));
+  return card;
+}
+
+async function reviewPlaces(ids, decision){
+  const { error } = await supabase.rpc('review_places', { place_ids: ids, decision });
+  if (error) { console.error(error); showToast(error.message || 'Something went wrong — try again'); return false; }
+  return true;
+}
+
+// Both sources agreeing is a strong signal: accept those in one go (duplicates are merged, the rest published)
+async function bulkApprove(){
+  const btn = document.getElementById('bulkApprove');
+  if (!confirm(`Accept ${btn.dataset.count} high-confidence places? Possible duplicates are merged into the existing listing; the rest go live.`)) return;
+  btn.disabled = true;
+  const { data, error } = await placesQuery('id, match_id').gte('confidence', HIGH_CONFIDENCE).limit(1000);
+  if (error) { console.error(error); showToast('Could not load places'); btn.disabled = false; return; }
+  const merge = data.filter(p => p.match_id).map(p => p.id);
+  const approve = data.filter(p => !p.match_id).map(p => p.id);
+  const ok = (!merge.length || await reviewPlaces(merge, 'merge')) && (!approve.length || await reviewPlaces(approve, 'approve'));
+  btn.disabled = false;
+  if (ok) showToast(`Accepted ${data.length} places`);
+  refreshTabCounts();
+  renderPlaces();
 }
 
 async function boot(){
@@ -221,7 +413,8 @@ async function boot(){
   }
 
   signOutBtn.classList.remove('hidden');
-  await renderQueue();
+  renderShell();
+  await showTab(sessionStorage.getItem('mw.adminTab') || 'reviews');
 }
 
 document.getElementById('signOutBtn').addEventListener('click', async () => { await supabase.auth.signOut(); await boot(); });

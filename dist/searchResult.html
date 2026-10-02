@@ -9,16 +9,17 @@
       <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
 
 
-  <script type="module" crossorigin src="/assets/searchResults-D_V2gjvq.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/supabase-CSUONmRi.js">
-  <link rel="stylesheet" crossorigin href="/assets/supabase-enEPS6xF.css">
+  <script type="module" crossorigin src="/assets/searchResults-BestX3z_.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-UCBCrBon.js">
+  <link rel="modulepreload" crossorigin href="/assets/origin-DN7wFXVn.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-CRdtDPva.css">
 </head>
 <body class="bg-[#F8F2ED] text-[#1E293B] min-h-screen">
 
 <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[600] bg-[#1E293B] text-white text-[13px] font-medium px-5 py-3 rounded-xl shadow-lg opacity-0 translate-y-4 pointer-events-none transition-all duration-300 max-w-[90vw] text-center" id="toast"></div>
 
 <nav class="bg-[#F5F5F4] border-b border-gray-50 sticky top-0 z-[200]">
-  <div class="max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-2 sm:gap-4 py-2.5 lg:flex-nowrap lg:py-0 lg:h-16">
+  <div class="max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-2 sm:gap-4 py-2.5 lg:flex-nowrap lg:py-0 lg:h-16">
     <a href="index.html" class="order-1 flex items-center gap-2.5 no-underline shrink-0">
       <div class="bg-[#D6453A] w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
@@ -55,7 +56,7 @@
 </nav>
 
 <div class="bg-white border-b border-[#E2E8F0] lg:sticky lg:top-16 z-[150]">
-  <div class="max-w-[1280px] mx-auto px-4 sm:px-6 min-h-[48px] py-2 lg:py-0 lg:h-12 flex items-center justify-between gap-3">
+  <div class="max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 min-h-[48px] py-2 lg:py-0 lg:h-12 flex items-center justify-between gap-3">
     <div class="flex bg-slate-100 rounded-[9px] p-[3px] gap-0.5 shrink-0">
       <button id="vt-list" onclick="setView('list')"
         class="vt-btn flex items-center gap-1.5 px-3.5 py-[5px] rounded-[7px] text-[13px] font-medium border-none cursor-pointer bg-white text-[#1E293B] shadow-sm font-sans transition-all">
@@ -69,7 +70,7 @@
       </button>
     </div>
     <div class="flex items-center gap-3 min-w-0">
-      <div class="text-[13px] text-[#64748B] truncate"><strong id="resultCount" class="text-[#1E293B]">…</strong> results near <span id="resultCity">Varanasi</span></div>
+      <div class="text-[13px] text-[#64748B] truncate"><strong id="resultCount" class="text-[#1E293B]">…</strong> results near <span id="resultCity">…</span></div>
       <button type="button" id="filterToggle" onclick="toggleFilters()"
         class="md:hidden flex items-center gap-1.5 shrink-0 border-[1.5px] border-[#E2E8F0] bg-white text-[#1E293B] rounded-[9px] px-3 py-[5px] text-[13px] font-medium cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -79,7 +80,7 @@
   </div>
 </div>
 
-<div class="page-wrap max-w-[1280px] mx-auto px-4 sm:px-6 pt-5 pb-12" id="pageWrap">
+<div class="page-wrap max-w-[1280px] 2xl:max-w-[1440px] [&.map-mode]:max-w-none mx-auto px-4 sm:px-6 pt-5 pb-12" id="pageWrap">
 
   <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-5 lg:gap-6" id="listView">
     <aside class="sidebar hidden md:block" id="filterSidebar">
@@ -90,6 +91,8 @@
           <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="doctor" onclick="setFilter('type','doctor',this)">Doctors</button>
           <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="hospital" onclick="setFilter('type','hospital',this)">Hospitals</button>
           <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="clinic" onclick="setFilter('type','clinic',this)">Clinics</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="pharmacy" onclick="setFilter('type','pharmacy',this)">Pharmacies</button>
+          <button class="chip px-3 py-1.5 rounded-lg text-[13px] border-[1.5px] border-[#E2E8F0] bg-white text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all" data-value="lab" onclick="setFilter('type','lab',this)">Labs</button>
         </div>
       </div>
 
@@ -167,8 +170,9 @@
       </div>
 
       <div id="hospitalSection">
-        <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-2.5">Nearby hospitals</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="hospitalGrid"></div>
+        <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8] mb-2.5" id="placesLabel">Nearby hospitals</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-2.5" id="hospitalGrid"></div>
+        <button type="button" id="morePlaces" onclick="showMorePlaces()" class="hidden mt-2.5 w-full py-2.5 rounded-xl border-[1.5px] border-dashed border-[#CBD5E1] bg-transparent text-[13px] font-medium text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-colors"></button>
       </div>
 
       <p class="text-[12px] font-semibold uppercase tracking-[.08em] text-[#94A3B8]" id="doctorLabel">Doctors</p>
@@ -180,6 +184,8 @@
         <p class="text-[14px] text-[#64748B]">Try widening your distance or removing some filters.</p>
         <button onclick="resetFilters()" class="mt-4 bg-[#D0423A] text-white border-none px-6 py-2.5 rounded-[10px] text-[14px] font-semibold cursor-pointer font-sans">Reset filters</button>
       </div>
+
+      <p class="text-[11px] text-[#94A3B8] pt-2">Some listings come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" class="underline hover:text-[#64748B]">© OpenStreetMap contributors</a> and <a href="https://overturemaps.org" target="_blank" rel="noopener" class="underline hover:text-[#64748B]">Overture Maps</a>. Details can be out of date, so call ahead.</p>
     </main>
   </div>
 
@@ -220,7 +226,7 @@
       <div class="absolute top-3 left-3 z-[4] flex items-center gap-3 bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-full px-3 py-1.5 text-[11px] font-medium text-[#64748B] shadow-[0_2px_10px_rgba(15,23,42,.06)]">
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#D0423A]"></span>Open</span>
         <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#94A3B8]"></span>Closed</span>
-        <span class="hidden sm:flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-white border-[1.5px] border-[#D0423A]"></span>Hospital</span>
+        <span id="mapLegendPlaces" class="contents"></span>
       </div>
     </div>
     <div class="map-results-pane bg-[#F8F2ED] border-t md:border-t-0 md:border-l border-[#E2E8F0] max-h-[70vh] md:max-h-none md:h-full overflow-y-auto">
@@ -274,8 +280,8 @@
   </div>
 </div>
 
-<footer class="bg-[#F2F1ED] border-t border-slate-200 px-6 py-5 md:px-12 lg:px-16">
-  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+<footer class="bg-[#F2F1ED] border-t border-slate-200 py-5">
+  <div class="max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
 
     <div class="flex items-center gap-3">
       <div class="bg-[#D6453A] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">

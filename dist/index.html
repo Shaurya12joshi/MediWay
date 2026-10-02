@@ -7,14 +7,14 @@
     
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-CxItDxQz.png">
    
-  <script type="module" crossorigin src="/assets/index-BNTbgLor.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/supabase-CSUONmRi.js">
-  <link rel="stylesheet" crossorigin href="/assets/supabase-enEPS6xF.css">
+  <script type="module" crossorigin src="/assets/index-DMybo-u7.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-UCBCrBon.js">
+  <link rel="stylesheet" crossorigin href="/assets/supabase-CRdtDPva.css">
 </head>
 <body class="bg-[#F8F2ED]">
 
-    <nav id="navBar" class="bg-[#F5F5F4] w-full border sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6">
+    <nav id="navBar" class="bg-[#F5F5F4] w-full border sticky top-0 z-50 px-4 sm:px-6 md:px-12 lg:px-16">
+        <div class="max-w-7xl mx-auto">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-3 lg:gap-2">
                     <div class="bg-[#D6453A] w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 lg:w-11 lg:h-11">
@@ -55,31 +55,35 @@
         </div>
     </div>
 
-    <div id="headerText" class="mx-4 sm:mx-6 lg:mx-8 mt-10 max-w-max">
+    <div class="md:px-12 lg:px-16">
+    <div class="max-w-7xl mx-auto">
+
+    <div id="headerText" class="mx-4 sm:mx-6 md:mx-0 mt-10 max-w-max">
         <div class="bg-white rounded-3xl flex items-center gap-3 border border-black/5 py-3 px-4 shadow-sm">
             <div class="w-3 h-3 rounded-full bg-emerald-600 flex-shrink-0"></div>
             <p class="text-sm text-[#3F3F46]">Available across India - Bengaluru, Mumbai, Delhi & more</p>
         </div>
     </div>
 
-    <div class="flex flex-row lg:gap-12 xl:gap-20 lg:pr-8">
+    <div class="flex flex-row lg:items-start lg:justify-between lg:gap-12 xl:gap-20">
 
         <div id="headlineText" class="flex flex-col min-w-0">
 
 
-            <div class="mx-5 my-2 lg:mx-10 lg:mr-0 font-custom">
-                <div class="flex gap-6 flex-col text-3xl md:text-4xl lg:text-8xl">
+            <div class="mx-5 my-2 md:mx-0 font-custom">
+                <!-- From lg the headline shares the row with the map card: size it to the room it has -->
+                <div class="flex gap-6 flex-col text-3xl md:text-4xl lg:text-[length:clamp(3.75rem,6.5vw,6rem)] lg:leading-none">
                     <h1 class="font-bold">Trusted healthcare,</h1>
                 </div>
-                <div class="flex gap-4 text-3xl md:text-4xl lg:text-8xl font-semibold">
+                <div class="flex gap-4 text-3xl md:text-4xl lg:text-[length:clamp(3.75rem,6.5vw,6rem)] lg:leading-none font-semibold">
                     <em class="text-[#D84B3E]">wherever</em>
                     <h1>you travel</h1>
                 </div>
-                <div class="font-sans text-sm text-stone-500 lg:text-3xl lg:max-w-screen-md mt-1">
+                <div class="font-sans text-sm text-stone-500 lg:text-xl xl:text-2xl 2xl:text-3xl lg:max-w-screen-md mt-1">
                     <p>Find verified doctors, hospitals, and pharmacies near you in seconds. Built for travelers, tourists, and anyone far from home.</p>
                 </div>
             </div>
-            <div class="flex flex-col p-5 lg:px-10 lg:pt-6 lg:pb-0 gap-3">
+            <div class="flex flex-col p-5 md:px-0 lg:pt-6 lg:pb-0 gap-3">
 
                 <div class="hidden">
                     <div class="flex items-center">
@@ -171,10 +175,11 @@
             </div>
         </div>
 
-        <div id="mainCard" class="hidden lg:block lg:w-[450px] lg:shrink-0 lg:bg-white lg:shadow-xl lg:rounded-t-3xl rounded-b-3xl lg:overflow-hidden">
+        <div id="mainCard" class="hidden lg:block lg:w-[380px] xl:w-[450px] lg:shrink-0 lg:bg-white lg:shadow-xl lg:rounded-t-3xl rounded-b-3xl lg:overflow-hidden">
             <!-- Static render of Lanka, Varanasi (OpenFreeMap / OpenStreetMap data) with a real driving route;
-                 markers are positioned in % of the image so they stay on their streets. -->
-            <div class="relative h-[320px] overflow-hidden bg-[#F3ECE4]">
+                 markers are positioned in % of the image so they stay on their streets. The box keeps the
+                 image's aspect ratio at every card width, so object-cover never crops them off. -->
+            <div class="relative aspect-[45/32] overflow-hidden bg-[#F3ECE4]">
                 <img src="/assets/hero-map-DxOymP3C.webp" width="450" height="320" loading="lazy" decoding="async"
                     alt="Street map of Lanka, Varanasi with a route to the nearest hospital"
                     class="absolute inset-0 w-full h-full object-cover select-none">
@@ -248,8 +253,12 @@
 
     </div>
 
-    <div id="statsArea" class="w-full mt-6">
-        <div class="px-6 md:px-12 lg:px-16">
+    </div>
+    </div>
+
+    <div id="statsArea" class="w-full mt-6 md:px-12 lg:px-16">
+      <div class="max-w-7xl mx-auto">
+        <div class="px-6 md:px-0">
             <div class="border-t border-slate-300 w-full"></div>
         </div>
         <div class="flex items-center justify-between w-full pt-2">
@@ -274,10 +283,11 @@
                 </div>
             </div>
         </div>
-        
-        <div class="px-6 md:px-12 lg:px-16">
+
+        <div class="px-6 md:px-0">
             <div class="border-t border-slate-300 w-full"></div>
         </div>
+      </div>
     </div>
 
     
@@ -285,7 +295,7 @@
 
 <div class="mx-auto max-w-6xl flex flex-col gap-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-20">
 
-        <div class="w-full max-w-sm mx-auto lg:mx-0 lg:justify-self-end rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white">
+        <div class="w-full max-w-sm xl:max-w-md mx-auto lg:mx-0 lg:justify-self-end rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white">
 
             <div class="bg-red-700 px-5 py-4">
             <div class="flex items-center justify-between mb-4">
@@ -366,7 +376,7 @@
 
         </div>
 
-        <div id="how-it-works" class="scroll-mt-20 flex flex-col justify-center gap-6 w-full max-w-sm mx-auto lg:mx-0 lg:justify-self-start min-w-0">
+        <div id="how-it-works" class="scroll-mt-20 flex flex-col justify-center gap-6 w-full max-w-sm xl:max-w-md mx-auto lg:mx-0 lg:justify-self-start min-w-0">
 
             <div>
             <p class="text-xs font-semibold tracking-widest uppercase text-[#D0423A] mb-2">How it works</p>
@@ -457,6 +467,7 @@
      </div>
 
 <div class="bg-[#1a1a1a] mt-4 px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+<div class="max-w-7xl mx-auto">
 
   <div class="mb-8">
     <p class="text-xs font-semibold tracking-widest uppercase text-[#D0423A] mb-3">The Problem</p>
@@ -515,8 +526,10 @@
 
   </div>
 </div>
+</div>
 
 <div id="features" class="scroll-mt-20 bg-[#F8F2ED] px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+<div class="max-w-7xl mx-auto">
 
   <div class="mb-10">
     <div class="flex items-center gap-2 mb-3">
@@ -634,8 +647,10 @@
 
   </div>
 </div>
+</div>
 
 <div class="bg-[#F8F2ED] px-6 py-12 md:px-12 lg:px-16 lg:py-16">
+<div class="max-w-7xl mx-auto">
 
   <div class="mb-10">
     <div class="flex items-center gap-2 mb-3">
@@ -682,6 +697,7 @@
 
   </div>
 </div>
+</div>
 
 <div class="relative bg-[#111111] px-6 py-20 md:px-12 lg:px-16 lg:py-28 overflow-hidden">
 
@@ -715,7 +731,7 @@
 </div>
 
 <footer class="bg-[#F2F1ED] border-t border-slate-200 px-6 py-5 md:px-12 lg:px-16">
-  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+  <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
 
     <div class="flex items-center gap-3">
       <div class="bg-[#D6453A] w-8 h-8 rounded-lg flex items-center justify-center shrink-0">

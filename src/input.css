@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Large screens: grow the whole UI with the viewport instead of leaving it a small island.
+   100% up to 1536px wide, 125% at 2560px, capped at 150% (~3600px+). Works because every
+   size ships as rem (postcss.config.js). Percentages keep the user's browser font setting. */
+html {
+  font-size: clamp(100%, 62.5% + 0.390625vw, 150%);
+}
+
 @keyframes float {
 
   0%, 100% {
@@ -61,8 +68,8 @@
   justify-content: center;
   border-radius: 9px;
   background: #fff;
-  color: #D0423A;
-  border: 2px solid #D0423A;
+  color: var(--kind, #D0423A);          /* set per facility kind in search.js */
+  border: 2px solid var(--kind, #D0423A);
   box-shadow: 0 4px 12px rgba(30, 41, 59, .16);
   cursor: pointer;
   transition: transform .18s ease;

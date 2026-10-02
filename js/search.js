@@ -1,42 +1,114 @@
 import { supabase, supabaseConfigured } from './supabase.js'
+import { saveOrigin, readOrigin, distanceKm, directionsUrl } from './origin.js'
 
-async function fetchDoctors(filters = {}) {
-  let query = supabase
-    .from('doctors')
-    .select('*')
-    .eq('city', filters.city || 'Varanasi');
-  if (filters.specialty && filters.specialty !== 'all')
-    query = query.overlaps('specialty', [filters.specialty]);
-  if (filters.walkIn)
-    query = query.eq('walk_in', true);
-  if (filters.rating > 0)
-    query = query.gte('rating', filters.rating);
-  if (filters.language && filters.language !== 'all')
-    query = query.contains('languages', [filters.language]);
+// Everything within the distance slider's max is fetched once; the slider then filters locally.
+const SEARCH_RADIUS_KM = 20;
+// Filters applied in the database (they change which rows come back). The rest are applied in render().
+const SERVER_FILTERS = ['type', 'specialty', 'walkIn', 'rating', 'language'];
 
-  const { data, error } = await query
-    .order('rating', { ascending: false });
+// Facilities in the `hospitals` table, by `kind`. Icons are Lucide (ISC licence).
+const KINDS = {
+  hospital: { label: 'Hospital', plural: 'Hospitals', color: '#D0423A', icon: '<path d="M12 5v14M5 12h14"/>' },
+  clinic:   { label: 'Clinic', plural: 'Clinics', color: '#2563EB', icon: '<path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6 6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/>' },
+  pharmacy: { label: 'Pharmacy', plural: 'Pharmacies', color: '#16A34A', icon: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>' },
+  lab:      { label: 'Lab', plural: 'Labs', color: '#7C3AED', icon: '<path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>' },
+};
+const kindOf = h => KINDS[h.kind] ?? KINDS.hospital;
+const showsDoctors = () => filters.type === 'all' || filters.type === 'doctor';
+const showsPlaces  = () => filters.type !== 'doctor';
 
-  if (error) { console.error(error); loadFailed = true; return []; }
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function rpc(fn, params) {
+  const { data, error } = await supabase.rpc(fn, params);
+  if (error) throw error;
   return data;
 }
 
-async function fetchHospitals(filters = {}) {
-  let query = supabase
-    .from('hospitals')
-    .select('*')
-    .eq('city', filters.city || 'Varanasi');
-  if (filters.specialty && filters.specialty !== 'all')
-    query = query.contains('specialty', [filters.specialty]);
-  const { data, error } = await query
-    .order('distance_km', { ascending: true });
-  if (error) { console.error(error); loadFailed = true; return []; }
+// Rows come back nearest first, with distance_km measured from the current origin
+function fetchDoctors() {
+  if (!showsDoctors()) return [];
+  return rpc('nearby_doctors', {
+    origin_lat: ORIGIN.lat,
+    origin_lng: ORIGIN.lng,
+    radius_km: SEARCH_RADIUS_KM,
+    specialty_filter: filters.specialty !== 'all' ? filters.specialty : null,
+    walk_in_only: filters.walkIn,
+    min_rating: filters.rating,
+    language_filter: filters.language !== 'all' ? filters.language : null,
+  });
+}
+
+// Facilities of every kind, or just the chosen one (so "Pharmacies" gets the nearest pharmacies,
+// not the pharmacies among the nearest few hundred places)
+function fetchHospitals() {
+  if (!showsPlaces()) return [];
+  return rpc('nearby_hospitals', {
+    origin_lat: ORIGIN.lat,
+    origin_lng: ORIGIN.lng,
+    radius_km: SEARCH_RADIUS_KM,
+    specialty_filter: filters.specialty !== 'all' ? filters.specialty : null,
+    kind_filter: KINDS[filters.type] ? filters.type : null,
+    max_results: PLACES_FETCH_LIMIT,
+  });
+}
+const PLACES_FETCH_LIMIT = 300;
+
+// ---------- Cities & origin ----------
+// Launched cities live in the `cities` table: adding one is a row there, not a code change.
+
+let CITIES = [];
+// Where distances are measured from: the user's position once detected, else a city centre
+let ORIGIN = null;
+
+async function fetchCities() {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('slug, name, center_lat, center_lng, radius_km')
+    .eq('launched', true)
+    .order('created_at'); // the first city launched is the default
+  if (error) throw error;
   return data;
 }
 
-let USER_LAT = 25.31668000, USER_LNG = 83.01041000;
+function cityCentre(city) {
+  return { lat: city.center_lat, lng: city.center_lng, city: city.slug, fromDevice: false };
+}
 
-async function detectLocation() {
+// The nearest launched city, and whether the point is inside its area
+function nearestCity(lat, lng) {
+  let city = null, km = Infinity;
+  for (const c of CITIES) {
+    const d = distanceKm(lat, lng, c.center_lat, c.center_lng);
+    if (d < km) { city = c; km = d; }
+  }
+  return { city, inside: city != null && km <= city.radius_km };
+}
+
+// ?city=<slug> wins, then the origin this tab already had, then the first launched city
+function initialOrigin() {
+  const slug = new URLSearchParams(location.search).get('city')?.toLowerCase();
+  const fromLink = CITIES.find(c => c.slug === slug);
+  if (fromLink) return cityCentre(fromLink);
+  const saved = readOrigin();
+  if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng) && nearestCity(saved.lat, saved.lng).inside) return saved;
+  return CITIES[0] ? cityCentre(CITIES[0]) : null;
+}
+
+function setOrigin(origin) {
+  ORIGIN = origin;
+  saveOrigin(origin);
+  document.getElementById('resultCity').textContent = CITIES.find(c => c.slug === origin.city)?.name ?? 'you';
+  document.getElementById('locLabel').textContent = origin.fromDevice ? 'Current Location' : 'Location';
+  if (mapInstance) {
+    userMarker.setPosition({ lat: ORIGIN.lat, lng: ORIGIN.lng });
+    mapInstance.flyTo({ center: [ORIGIN.lng, ORIGIN.lat], zoom: 14 });
+  }
+}
+
+function detectLocation() {
   if (!navigator.geolocation) {
     showToast("Geolocation not supported");
     return;
@@ -46,37 +118,20 @@ async function detectLocation() {
   locLabel.textContent = "Detecting...";
 
   navigator.geolocation.getCurrentPosition(
-    (position) => {
-      USER_LAT = position.coords.latitude;
-      USER_LNG = position.coords.longitude;
-
-      const VARANASI_LAT = 25.3176;
-      const VARANASI_LNG = 82.9739;
-
-      const distance = getDistanceFromLatLonInKm(
-        USER_LAT,
-        USER_LNG,
-        VARANASI_LAT,
-        VARANASI_LNG
-      );
-      if (distance > 30) {
-        showToast(
-          "Your location is not currently supported. MediWay is available only in Varanasi."
-        );
+    async ({ coords }) => {
+      await ready; // cities must be loaded to tell which one the user is in
+      const { city, inside } = nearestCity(coords.latitude, coords.longitude);
+      if (inside || !city) {
+        setOrigin({ lat: coords.latitude, lng: coords.longitude, city: city?.slug ?? null, fromDevice: true });
+      } else {
+        showToast(`MediWay isn't in your area yet. Showing ${city.name}.`);
+        setOrigin(cityCentre(city));
       }
-
-      locLabel.textContent = "Current Location";
-
-      if (mapInstance) {
-        userMarker.setPosition({ lat: USER_LAT, lng: USER_LNG });
-        mapInstance.flyTo({ center: [USER_LNG, USER_LAT], zoom: 14 });
-      }
-
-      console.log("User Location:", USER_LAT, USER_LNG);
+      await loadData();
     },
     (error) => {
       console.error(error);
-      locLabel.textContent = "Location";
+      locLabel.textContent = ORIGIN?.fromDevice ? "Current Location" : "Location";
       showToast("Unable to access your location");
     },
     {
@@ -86,22 +141,6 @@ async function detectLocation() {
     }
   );
 };
-
-function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
 
 let DOCTORS = [];
 let loadFailed = false;
@@ -131,7 +170,11 @@ function getNowIST() {
   };
 }
 
+// Imported places often have no hours: say so rather than guess
+const UNKNOWN_HOURS = { open: false, unknown: true, label: 'Hours not listed', nextSlot: 'Call ahead' };
+
 function getStatus(doctor) {
+  if (!doctor.schedule?.length) return UNKNOWN_HOURS;
   const { day: today, mins: nowM } = getNowIST();
 
   for (const slot of doctor.schedule) {
@@ -182,6 +225,7 @@ function getStatus(doctor) {
 }
 
 function scheduleText(doctor) {
+  if (!doctor.schedule?.length) return 'Hours not listed';
   const groups = [];
   for (const slot of doctor.schedule) {
     const key = slot.days.join(',');
@@ -217,7 +261,7 @@ let sortBy = 'rating', mapSortBy = 'rating', searchQuery = '', currentView = 'li
 let mapInstance = null, mapReady = null, userMarker = null, markers = {}, activeDir = null, dirMode = 'drive';
 
 function mapsUrl(q)   { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q); }
-function dirUrl(dest) { return 'https://www.google.com/maps/dir/?api=1&origin=' + USER_LAT + ',' + USER_LNG + '&destination=' + encodeURIComponent(dest); }
+function dirUrl(dest) { return directionsUrl(dest, ORIGIN); }
 
 function starsHtml(r) {
   let s = '';
@@ -232,7 +276,7 @@ function matchesSearchDoctor(d) {
   const specialtyStr = Array.isArray(d.specialty) ? d.specialty.join(' ') : (d.specialty || '');
   return d.name.toLowerCase().includes(q) ||
          specialtyStr.toLowerCase().includes(q) ||
-         d.hospital.toLowerCase().includes(q);
+         (d.hospital || '').toLowerCase().includes(q);
 }
 
 function matchesSearchHospital(h) {
@@ -241,22 +285,32 @@ function matchesSearchHospital(h) {
   const specialtyStr = Array.isArray(h.specialty) ? h.specialty.join(' ') : (h.specialty || '');
   return h.name.toLowerCase().includes(q) ||
          specialtyStr.toLowerCase().includes(q) ||
+         kindOf(h).label.toLowerCase().includes(q) ||
          (h.address || '').toLowerCase().includes(q);
 }
 
 function matchesFilters(d) {
   const status = getStatus(d);
-  if (filters.type      !== 'all' && d.type !== filters.type)               return false;
+  if (!showsDoctors())                                                         return false;
   if (filters.specialty !== 'all' && !d.specialty?.includes(filters.specialty)) return false;
-  if (filters.language  !== 'all' && !d.languages.includes(filters.language)) return false;
+  if (filters.language  !== 'all' && !d.languages?.includes(filters.language)) return false;
   if (d.distance_km > filters.distance)                                       return false;
   if (d.rating < filters.rating)                                             return false;
   if (filters.openNow   && !status.open)                                    return false;
   if (filters.walkIn    && !d.walk_in)                                        return false;
-  if (filters.english   && !d.languages.includes('English'))                 return false;
+  if (filters.english   && !d.languages?.includes('English'))                return false;
   if (filters.insurance && !d.insurance)                                     return false;
   if (!matchesSearchDoctor(d))                                                return false;
   return true;
+}
+
+// Facilities: the kind chip (already applied by the query), distance slider, open-now and the search box
+function matchesPlace(h) {
+  if (!showsPlaces())                                                    return false;
+  if (KINDS[filters.type] && h.kind !== filters.type)                    return false;
+  if (h.distance_km > filters.distance)                                  return false;
+  if (filters.openNow && !((kindOf(h) === KINDS.hospital && h.er24) || getStatus(h).open)) return false;
+  return matchesSearchHospital(h);
 }
 
 function sortDoctors(arr, by) {
@@ -327,10 +381,11 @@ async function loadMappls() {
 
 function ensureMap() {
   mapReady ??= (async () => {
-    await loadMappls();
+    await Promise.all([loadMappls(), ready]);
+    if (!ORIGIN) throw new Error('No launched city to centre the map on');
 
     mapInstance = new mappls.Map('map', {
-      center: { lat: USER_LAT, lng: USER_LNG },
+      center: { lat: ORIGIN.lat, lng: ORIGIN.lng },
       zoom: 13,
       backgroundColor: '#F3ECE4',
       // Our own controls sit on top of the map
@@ -363,7 +418,7 @@ function ensureMap() {
 
     userMarker = new mappls.Marker({
       map: mapInstance,
-      position: { lat: USER_LAT, lng: USER_LNG },
+      position: { lat: ORIGIN.lat, lng: ORIGIN.lng },
       html: '<div class="mw-user"></div>',
       width: 22,
       height: 22,
@@ -440,14 +495,57 @@ function doctorPopupHtml(d) {
     </div>`;
 }
 
+// ER status for hospitals that record it; otherwise opening hours when known
+function placeStatus(h) {
+  const isHospital = kindOf(h) === KINDS.hospital;
+  if (isHospital && h.er24 === true)  return { text: '● ER open 24/7', cls: 'text-[#16A34A]' };
+  if (isHospital && h.er24 === false) return { text: '○ No 24/7 ER', cls: 'text-[#64748B]' };
+  const status = getStatus(h);
+  if (status.unknown)   return { text: 'Hours not listed', cls: 'text-[#94A3B8]' };
+  return { text: `${status.open ? '●' : '○'} ${status.label}`, cls: status.open ? 'text-[#16A34A]' : 'text-[#64748B]' };
+}
+
+// A named place is friendlier in Google Maps; without an address, the exact point is more reliable
+function placeDestination(h) {
+  return h.address ? `${h.name} ${h.address}` : `${h.lat},${h.lng}`;
+}
+
+function telHref(phone) { return 'tel:' + phone.replace(/[^\d+]/g, ''); }
+
 function hospitalPopupHtml(h) {
+  const k = kindOf(h), status = placeStatus(h);
   return `
     <div class="w-[220px]">
-      <div class="font-serif text-[16px] leading-tight text-[#1E293B]">${h.name}</div>
-      <div class="text-[11px] text-[#64748B] mt-1 leading-snug">${h.address}</div>
-      <div class="text-[11px] mt-2 font-medium">${h.er24 ? '<span class="text-[#16A34A]">● ER open 24/7</span>' : '<span class="text-[#94A3B8]">○ No 24/7 ER</span>'}${h.distance_km != null ? `<span class="text-[#64748B] font-normal"> · ${h.distance_km} km</span>` : ''}</div>
-      <a class="mt-3 block text-center py-2 rounded-lg text-[12px] font-semibold bg-[#D0423A] hover:bg-[#B8362F] text-white no-underline transition-colors" href="${dirUrl(h.name + ' ' + h.address)}" target="_blank">Open in Maps</a>
+      <div class="text-[10px] font-semibold uppercase tracking-[.08em]" style="color:${k.color}">${k.label}</div>
+      <div class="font-serif text-[16px] leading-tight text-[#1E293B] mt-0.5">${escapeHtml(h.name)}</div>
+      ${h.address ? `<div class="text-[11px] text-[#64748B] mt-1 leading-snug">${escapeHtml(h.address)}</div>` : ''}
+      <div class="text-[11px] mt-2 font-medium"><span class="${status.cls}">${status.text}</span>${h.distance_km != null ? `<span class="text-[#64748B] font-normal"> · ${h.distance_km} km</span>` : ''}</div>
+      <div class="flex gap-1.5 mt-3">
+        <a class="flex-1 block text-center py-2 rounded-lg text-[12px] font-semibold bg-[#D0423A] hover:bg-[#B8362F] text-white no-underline transition-colors" href="${dirUrl(placeDestination(h))}" target="_blank" rel="noopener">Directions</a>
+        ${h.phone ? `<a class="flex-1 block text-center py-2 rounded-lg text-[12px] font-semibold border-[1.5px] border-[#E2E8F0] hover:border-[#1E293B] bg-white text-[#1E293B] no-underline transition-colors" href="${telHref(h.phone)}">Call</a>` : ''}
+      </div>
     </div>`;
+}
+
+function placePinHtml(h) {
+  const k = kindOf(h);
+  const weight = k === KINDS.hospital ? 3 : 2.2;
+  return `<div class="mw-hospital" style="--kind:${k.color}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${weight}" stroke-linecap="round" stroke-linejoin="round">${k.icon}</svg></div>`;
+}
+
+// "All" maps hospitals only (a city has hundreds of pharmacies and labs); choosing a kind maps that kind.
+// Nearest first, capped so the map stays quick.
+const MAP_PLACE_LIMIT = 150;
+function mapPlaces() {
+  return HOSPITALS.filter(matchesPlace).filter(hasCoords)
+    .filter(h => filters.type !== 'all' || kindOf(h) === KINDS.hospital)
+    .slice(0, MAP_PLACE_LIMIT);
+}
+
+function renderMapLegend(places) {
+  const kinds = [...new Set(places.map(kindOf))];
+  document.getElementById('mapLegendPlaces').innerHTML = kinds.map(k =>
+    `<span class="hidden sm:flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-white border-[1.5px]" style="border-color:${k.color}"></span>${k.label}</span>`).join('');
 }
 
 function renderMapMarkers() {
@@ -455,16 +553,19 @@ function renderMapMarkers() {
   Object.values(markers).forEach(m => mappls.remove({ map: mapInstance, layer: m }));
   markers = {};
 
-  HOSPITALS.filter(matchesSearchHospital).filter(hasCoords).forEach(h => {
+  const places = mapPlaces();
+  renderMapLegend(places);
+  places.forEach(h => {
     markers['h' + h.id] = new mappls.Marker({
       map: mapInstance,
       position: { lat: +h.lat, lng: +h.lng },
-      html: '<div class="mw-hospital"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>',
+      html: placePinHtml(h),
       width: 30,
       height: 30,
       popupHtml: hospitalPopupHtml(h),
       popupOptions: { offset: [0, -18], maxWidth: 'none' },
     });
+    markers['h' + h.id].getElement().addEventListener('click', () => highlightPlaceCard(h.id));
   });
 
   DOCTORS.filter(matchesFilters).filter(hasCoords).forEach(d => {
@@ -499,14 +600,14 @@ function highlightMapCard(id) {
 
 function fitToResults({ animate = true } = {}) {
   if (!mapInstance) return;
-  const bounds = boundsOf([[USER_LNG, USER_LAT], ...Object.values(markers).map(m => { const p = m.getLngLat(); return [p.lng, p.lat]; })]);
+  const bounds = boundsOf([[ORIGIN.lng, ORIGIN.lat], ...Object.values(markers).map(m => { const p = m.getLngLat(); return [p.lng, p.lat]; })]);
   // Pins are anchored at their tip and stand ~44px tall; the legend and controls sit on top / right
   mapInstance.fitBounds(bounds, { padding: { top: 100, bottom: 40, left: 48, right: 72 }, maxZoom: 15, animate });
 }
 
 function centerMap() {
   if (!mapInstance) return;
-  mapInstance.flyTo({ center: [USER_LNG, USER_LAT], zoom: 14 });
+  mapInstance.flyTo({ center: [ORIGIN.lng, ORIGIN.lat], zoom: 14 });
 }
 
 function zoomMap(delta) {
@@ -515,7 +616,7 @@ function zoomMap(delta) {
 
 // Road geometry from the public OSRM demo server; falls back to a dashed straight line.
 async function fetchRoute(d) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${USER_LNG},${USER_LAT};${d.lng},${d.lat}?overview=full&geometries=geojson`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${ORIGIN.lng},${ORIGIN.lat};${d.lng},${d.lat}?overview=full&geometries=geojson`;
   try {
     const res = await fetch(url);
     const json = await res.json();
@@ -524,7 +625,7 @@ async function fetchRoute(d) {
     return { geometry: route.geometry, minutes: Math.round(route.duration / 60), km: route.distance / 1000, approx: false };
   } catch (err) {
     console.warn('Routing unavailable, drawing straight line:', err);
-    return { geometry: { type: 'LineString', coordinates: [[USER_LNG, USER_LAT], [+d.lng, +d.lat]] }, minutes: null, km: null, approx: true };
+    return { geometry: { type: 'LineString', coordinates: [[ORIGIN.lng, ORIGIN.lat], [+d.lng, +d.lat]] }, minutes: null, km: null, approx: true };
   }
 }
 
@@ -644,10 +745,13 @@ function renderDoctors() {
   const grid  = document.getElementById('doctorGrid');
   const noRes = document.getElementById('noResults');
   const label = document.getElementById('doctorLabel');
-  document.getElementById('resultCount').textContent = filtered.length;
+  const placeCount = HOSPITALS.filter(matchesPlace).length;
+  document.getElementById('resultCount').textContent = filtered.length + placeCount;
 
   if (filtered.length === 0) {
-    grid.innerHTML = ''; noRes.classList.remove('hidden'); label.style.display = 'none';
+    grid.innerHTML = ''; label.style.display = 'none';
+    // Only an empty page overall is "no results": "Pharmacies" has no doctors by design
+    noRes.classList.toggle('hidden', placeCount > 0 && !loadFailed);
     noRes.innerHTML = loadFailed ? `
       <p class="text-[32px] mb-3">⚠️</p>
       <p class="font-serif text-[22px] mb-2">Couldn’t load results</p>
@@ -682,7 +786,7 @@ function renderDoctors() {
         </div>
         <p class="text-[13px] text-[#64748B] mb-2 flex items-center gap-[5px]">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
-          ${d.hospital} · ${d.distance_km} km away
+          ${d.hospital ?? ''}${d.distance_km != null ? ` · ${d.distance_km} km away` : ''}
         </p>
         <p class="text-[12px] text-[#94A3B8] mb-2.5 flex items-center gap-[5px]">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -694,8 +798,8 @@ function renderDoctors() {
           </span>
           ${d.walk_in    ? '<span class="text-[11px] font-medium px-[9px] py-[3px] rounded-[6px] bg-[#EFF6FF] text-[#2563EB]">Walk-ins OK</span>' : ''}
           ${d.insurance ? '<span class="text-[11px] font-medium px-[9px] py-[3px] rounded-[6px] bg-[#EFF6FF] text-[#2563EB]">Insurance OK</span>' : ''}
-          <span class="text-[11px] font-medium px-[9px] py-[3px] rounded-[6px] bg-slate-100 text-[#64748B]">${d.languages.join(' · ')}</span>
-          <span class="text-[11px] font-medium px-[9px] py-[3px] rounded-[6px] bg-slate-100 text-[#64748B]">${d.experience} yrs exp.</span>
+          ${d.languages?.length ? `<span class="text-[11px] font-medium px-[9px] py-[3px] rounded-[6px] bg-slate-100 text-[#64748B]">${d.languages.join(' · ')}</span>` : ''}
+          ${d.experience ? `<span class="text-[11px] font-medium px-[9px] py-[3px] rounded-[6px] bg-slate-100 text-[#64748B]">${d.experience} yrs exp.</span>` : ''}
         </div>
         <div class="flex items-center justify-between gap-3 flex-wrap pt-3 border-t border-[#E2E8F0]">
           <div class="flex items-center gap-3.5 flex-wrap">
@@ -716,9 +820,6 @@ function renderDoctors() {
             <a href="profile.html?id=${d.id}" class="bg-white text-[#1E293B] border-[1.5px] border-[#E2E8F0] px-3.5 py-[7px] rounded-[9px] text-[13px] font-medium cursor-pointer hover:border-[#1E293B] transition-all font-sans flex items-center gap-[5px] no-underline">
               View Profile
             </a>
-            <button onclick="showToast('Booking ${d.name}...')" class="bg-[#D0423A] hover:bg-[#B8362F] text-white border-none px-[18px] py-2 rounded-[9px] text-[13px] font-semibold cursor-pointer transition-colors font-sans">
-              Book →
-            </button>
           </div>
         </div>
       </div>
@@ -726,26 +827,76 @@ function renderDoctors() {
   }).join('');
 }
 
+// "All" previews the nearest few places; a chosen kind lists them all, a page at a time
+const PLACES_PREVIEW = 6, PLACES_PAGE = 30;
+let placesShown = PLACES_PREVIEW;
+function resetPlacesPaging() { placesShown = KINDS[filters.type] ? PLACES_PAGE : PLACES_PREVIEW; }
+
+function showMorePlaces() {
+  placesShown = placesShown === PLACES_PREVIEW && !KINDS[filters.type] ? PLACES_PAGE : placesShown + PLACES_PAGE;
+  renderHospitals();
+}
+
+// Imported addresses often start with a house or shop number: show the locality instead
+function localityOf(address) {
+  const city = CITIES.find(c => c.slug === ORIGIN?.city)?.name.toLowerCase();
+  const parts = (address || '').split(',').map(p => p.trim())
+    .filter(p => p && p.toLowerCase() !== city && !/sub-district|uttar pradesh|india|^\d{6}$/i.test(p));
+  return parts.findLast(p => !/\d/.test(p)) ?? parts[0] ?? null;
+}
+
+// "All" previews a mix — the nearest hospital, pharmacy, clinic, lab, then round again — so a
+// cluster of labs next door doesn't hide the nearest hospital
+function previewMix(places, n) {
+  const byKind = Object.keys(KINDS).map(k => places.filter(h => kindOf(h) === KINDS[k]));
+  const picked = [];
+  for (let i = 0; picked.length < n && byKind.some(list => list[i]); i++) {
+    for (const list of byKind) if (list[i] && picked.length < n) picked.push(list[i]);
+  }
+  return picked.sort((a, b) => a.distance_km - b.distance_km);
+}
+
+function placeCard(h, i) {
+  const k = kindOf(h), status = placeStatus(h);
+  const where = [h.distance_km != null ? `${h.distance_km} km` : null, localityOf(h.address)].filter(Boolean).join(' · ');
+  return `
+    <div class="animate-fadeUp bg-white border border-[#E2E8F0] rounded-2xl pl-4 pr-3 py-4 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,.06)] hover:border-slate-300 transition-all" style="animation-delay:${Math.min(i, 8) * .05}s;">
+      <a href="${dirUrl(placeDestination(h))}" target="_blank" rel="noopener" class="flex items-center gap-3 flex-1 min-w-0 no-underline" title="Directions">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:${k.color}14;color:${k.color}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${k.icon}</svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[14px] font-semibold text-[#1E293B] break-words">${escapeHtml(h.name)}</p>
+          <p class="text-[12px] text-[#64748B] truncate">${k.label}${where ? ' · ' + escapeHtml(where) : ''}</p>
+          <p class="text-[11px] font-medium mt-0.5 ${status.cls}">${status.text}</p>
+        </div>
+      </a>
+      ${h.phone ? `<a href="${telHref(h.phone)}" title="Call ${escapeHtml(h.phone)}" class="w-8 h-8 rounded-[9px] border-[1.5px] border-[#E2E8F0] flex items-center justify-center shrink-0 text-[#64748B] hover:border-[#D0423A] hover:text-[#D0423A] transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </a>` : ''}
+    </div>`;
+}
+
 function renderHospitals() {
-  const filtered = HOSPITALS.filter(matchesSearchHospital);
-  const grid = document.getElementById('hospitalGrid');
-  grid.innerHTML = filtered.map((h, i) => `
-    <div class="animate-fadeUp bg-white border border-[#E2E8F0] rounded-2xl px-5 py-[18px] flex items-center gap-3.5 cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,.06)] hover:border-slate-300 transition-all" style="animation-delay:${i*.05}s;" onclick="window.open('${dirUrl(h.name+' '+h.address)}','_blank')">
-      <div class="w-12 h-12 rounded-xl bg-[#FEF2F2] flex items-center justify-center shrink-0">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="#D0423A"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14H8v-4h4v4zm0-6H8V7h4v4zm4 6h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="text-[14px] font-semibold text-[#1E293B] break-words">${h.name}</p>
-        <p class="text-[12px] text-[#64748B]">${h.distance_km} km · ${h.address.split(',')[0]}</p>
-        <p class="text-[11px] font-medium mt-0.5 ${h.er24?'text-[#16A34A]':'text-[#64748B]'}">${h.er24?'● ER open 24/7':'○ No 24/7 ER'}</p>
-      </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-    </div>`).join('');
+  const all = HOSPITALS.filter(matchesPlace);
+  const kind = KINDS[filters.type];
+  document.getElementById('hospitalSection').classList.toggle('hidden', all.length === 0);
+  // The query returns at most PLACES_FETCH_LIMIT: past that there are more than we can count
+  const capped = HOSPITALS.length >= PLACES_FETCH_LIMIT && all.length === HOSPITALS.length;
+  document.getElementById('placesLabel').textContent =
+    `${kind ? kind.plural : 'Nearby hospitals, clinics & pharmacies'} · ${all.length}${capped ? '+' : ''}`;
+  const shown = placesShown === PLACES_PREVIEW && !kind ? previewMix(all, PLACES_PREVIEW) : all.slice(0, placesShown);
+  document.getElementById('hospitalGrid').innerHTML = shown.map(placeCard).join('');
+  const more = document.getElementById('morePlaces');
+  const hidden = all.length - placesShown;
+  more.classList.toggle('hidden', hidden <= 0);
+  more.textContent = placesShown === PLACES_PREVIEW && !kind ? `Show more nearby places (${hidden})` : `Show ${Math.min(hidden, PLACES_PAGE)} more`;
 }
 
 function renderMapCards() {
-  const filtered = sortDoctors(DOCTORS.filter(matchesFilters), mapSortBy);
   const container = document.getElementById('mapCards');
+  if (!showsDoctors()) { renderPlaceMapCards(container); return; }
+  const filtered = sortDoctors(DOCTORS.filter(matchesFilters), mapSortBy);
   if (filtered.length === 0) {
     container.innerHTML = '<div class="p-6 text-center text-[#64748B] text-[13px]">No results match your filters</div>';
     return;
@@ -769,6 +920,46 @@ function renderMapCards() {
       </div>
     </div>`;
   }).join('');
+}
+
+// With a facility chip on, the side panel lists the same places as the map, nearest first
+function renderPlaceMapCards(container) {
+  const places = mapPlaces();
+  if (!places.length) {
+    container.innerHTML = '<div class="p-6 text-center text-[#64748B] text-[13px]">No results match your filters</div>';
+    return;
+  }
+  container.innerHTML = places.map(h => {
+    const k = kindOf(h), status = placeStatus(h);
+    return `
+    <div class="map-card bg-white border border-[#E2E8F0] rounded-xl p-3.5 flex gap-3 cursor-pointer hover:border-[#D0423A] hover:shadow-[0_2px_12px_rgba(208,66,58,.12)] transition-all" data-place="${escapeHtml(h.id)}">
+      <div class="w-11 h-11 rounded-[10px] shrink-0 flex items-center justify-center" style="background:${k.color}14;color:${k.color}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${k.icon}</svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-[14px] text-[#1E293B] leading-[1.3] mb-[1px] break-words">${escapeHtml(h.name)}</div>
+        <div class="text-[12px] font-medium" style="color:${k.color}">${k.label}${h.distance_km != null ? ` · ${h.distance_km} km` : ''}</div>
+        <div class="text-[11px] mt-1 ${status.cls}">${status.text}</div>
+      </div>
+    </div>`;
+  }).join('');
+  container.onclick = e => { const card = e.target.closest('[data-place]'); if (card) focusPlace(card.dataset.place); };
+}
+
+function highlightPlaceCard(id) {
+  document.querySelectorAll('.map-card').forEach(c => c.classList.toggle('active', c.dataset.place === String(id)));
+  document.querySelector(`.map-card[data-place="${CSS.escape(String(id))}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function focusPlace(id) {
+  const h = HOSPITALS.find(x => String(x.id) === String(id));
+  if (!h || !mapInstance || !hasCoords(h)) return;
+  mapInstance.flyTo({ center: [+h.lng, +h.lat], zoom: Math.max(mapInstance.getZoom(), 15), duration: 700 });
+  Object.entries(markers).forEach(([key, m]) => {
+    const open = m.getPopup()?.isOpen();
+    if ((key === 'h' + h.id) !== !!open) m.togglePopup();
+  });
+  highlightPlaceCard(h.id);
 }
 
 function focusDoctor(id) {
@@ -821,6 +1012,7 @@ function setView(v) {
 
 async function setFilter(key, value, btn) {
   filters[key] = value;
+  resetPlacesPaging();
   if (btn) {
     btn.closest('[id$="Filter"]').querySelectorAll('.chip').forEach(c => {
       c.classList.remove('active','border-[#D0423A]','bg-[#FDECEA]','text-[#D0423A]','font-medium');
@@ -829,13 +1021,14 @@ async function setFilter(key, value, btn) {
     btn.classList.add('active','border-[#D0423A]','bg-[#FDECEA]','text-[#D0423A]','font-medium');
     btn.classList.remove('border-[#E2E8F0]','bg-white','text-[#64748B]');
   }
-  await loadData({ ...filters });
+  // The distance slider fires on every drag step: those only need a re-render, not a query
+  if (SERVER_FILTERS.includes(key)) await loadData(); else render();
 }
 
 async function toggleOption(key, row) {
   filters[key] = !filters[key];
   row.querySelector('.toggle').classList.toggle('on', filters[key]);
-  await loadData({ ...filters });
+  if (SERVER_FILTERS.includes(key)) await loadData(); else render();
 }
 
 function setSort(key, btn) {
@@ -879,6 +1072,7 @@ async function resetFilters() {
   document.querySelectorAll('.toggle').forEach(t => t.classList.remove('on'));
   document.getElementById('distVal').textContent = '20 km';
   document.querySelector('input[type=range]').value = 20;
+  resetPlacesPaging();
 
   await loadData();
   showToast('Filters reset');
@@ -921,6 +1115,7 @@ function toggleFilters() {
 
 document.getElementById('searchInput').addEventListener('input', e => {
   searchQuery = e.target.value.trim();
+  resetPlacesPaging();
   render();
 });
 
@@ -950,21 +1145,46 @@ function showLoading() {
     <div class="bg-white border border-[#E2E8F0] rounded-2xl h-[86px] animate-pulse"></div>`.repeat(2);
 }
 
-async function loadData(f = {}) {
-  showLoading();
-  loadFailed = !supabaseConfigured;
-  if (supabaseConfigured) {
-    [DOCTORS, HOSPITALS] = await Promise.all([fetchDoctors(f), fetchHospitals(f)]);
-  } else {
-    DOCTORS = []; HOSPITALS = [];
+// Same origin + same server-side filters -> same rows, so flipping a chip back is instant
+const resultCache = new Map();
+let loadSeq = 0;
+
+async function loadData() {
+  const seq = ++loadSeq;
+  await ready;
+  let results = [[], []], failed = true;
+  if (supabaseConfigured && ORIGIN) {
+    const key = JSON.stringify([ORIGIN.lat, ORIGIN.lng, ...SERVER_FILTERS.map(k => filters[k])]);
+    if (!resultCache.has(key)) {
+      showLoading();
+      const request = Promise.all([fetchDoctors(), fetchHospitals()]);
+      request.catch(() => resultCache.delete(key)); // so "Try again" really retries
+      resultCache.set(key, request);
+    }
+    try { results = await resultCache.get(key); failed = false; }
+    catch (err) { console.error(err); }
   }
+  if (seq !== loadSeq) return; // a newer search started while this one was in flight
+  [DOCTORS, HOSPITALS] = results;
+  loadFailed = failed;
   render();
 }
 
-function init() { return loadData(); }
-init();
+// Resolves once the launched cities and the starting origin are known
+const ready = (async () => {
+  showLoading();
+  if (!supabaseConfigured) return;
+  try {
+    CITIES = await fetchCities();
+    const origin = initialOrigin();
+    if (origin) setOrigin(origin);
+  } catch (err) {
+    console.error('Could not load cities:', err);
+  }
+})();
+loadData();
 
-function applyFilters() { return loadData({ ...filters }); }
+function applyFilters() { return loadData(); }
 
 window.setFilter = setFilter;
 window.setSort = setSort;
@@ -984,3 +1204,4 @@ window.zoomMap = zoomMap;
 window.fitToResults = fitToResults;
 window.setActivePin = setActivePin;
 window.focusDoctor = focusDoctor;
+window.showMorePlaces = showMorePlaces;
