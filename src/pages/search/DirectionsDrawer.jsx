@@ -26,10 +26,14 @@ export default function DirectionsDrawer() {
     ? (mode === 'drive' ? route.minutes : Math.round(route.km / TRAVEL_SPEEDS[mode] * 60))
     : simDirections(d, mode).mins;
 
+  // Nothing to show until a doctor is picked (an empty drawer is only a border and a shadow)
+  if (!d) return null;
+
+  // Closed: slid down and hidden — `invisible` flips only once the slide has finished
   return (
     <div id="dirDrawer" aria-hidden={!dirDoctor}
-      className={`fixed bottom-0 left-0 right-0 md:bottom-12 md:left-4 md:right-auto md:w-[380px] z-[500] bg-white rounded-t-2xl md:rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,.15)] md:shadow-[0_18px_48px_rgba(15,23,42,.18)] md:border md:border-[#E2E8F0] max-h-[50vh] md:max-h-[calc(100vh-180px)] overflow-y-auto transform transition-transform duration-300 ease-out ${dirDoctor ? '' : 'translate-y-[120%]'}`}>
-      {d && <>
+      className={`fixed bottom-0 left-0 right-0 md:bottom-12 md:left-4 md:right-auto md:w-[380px] z-[500] bg-white rounded-t-2xl md:rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,.15)] md:shadow-[0_18px_48px_rgba(15,23,42,.18)] md:border md:border-[#E2E8F0] max-h-[50vh] md:max-h-[calc(100vh-180px)] overflow-y-auto transform transition-[transform,visibility] duration-300 ease-out ${dirDoctor ? '' : 'translate-y-[120%] invisible'}`}>
+      <>
         <div className="w-10 h-1 bg-[#E2E8F0] rounded mx-auto mt-3 md:hidden"></div>
         <div className="relative px-5 pt-3.5 pb-3 border-b border-[#E2E8F0]">
           <p className="font-serif text-[17px] text-[#1E293B] mb-0.5">{d.hospital}</p>
@@ -70,7 +74,7 @@ export default function DirectionsDrawer() {
             Open in Google Maps
           </a>
         </div>
-      </>}
+      </>
     </div>
   );
 }
