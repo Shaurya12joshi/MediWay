@@ -17,6 +17,7 @@ import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseOsmHours } from './lib/opening-hours.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const USER_AGENT = 'MediWay-importer/1.0 (+https://github.com/Shaurya12joshi/MEDROUTE)'
@@ -212,7 +213,7 @@ function osmToPlace(el) {
     phone: cleanPhone(t.phone ?? t['contact:phone'] ?? t['contact:mobile']),
     website: cleanWebsite(t.website ?? t['contact:website'] ?? t.url),
     opening_hours: t.opening_hours ?? null,
-    schedule: parseOpeningHours(t.opening_hours),
+    schedule: parseOsmHours(t.opening_hours),
     sources: [{ source: 'osm', id: `${el.type}/${el.id}` }],
   }
 }
@@ -387,46 +388,6 @@ function nameSimilarity(a, b) {
   let shared = 0
   for (const g of A) if (B.has(g)) shared++
   return shared / (A.size + B.size - shared)
-}
-
-// ---------- Opening hours ----------
-
-// Parses the common OSM forms ("24/7", "Mo-Sa 09:00-21:00; Su 10:00-14:00") into the
-// { days, open, close } slots the site already uses. Anything fancier returns null.
-const DAY = { Su: 0, Mo: 1, Tu: 2, We: 3, Th: 4, Fr: 5, Sa: 6 }
-function parseOpeningHours(raw) {
-  if (!raw) return null
-  const s = raw.trim()
-  if (s === '24/7') return [{ days: [0, 1, 2, 3, 4, 5, 6], open: '00:00', close: '23:59' }]
-  const slots = []
-  for (const rule of s.split(';').map(r => r.trim()).filter(Boolean)) {
-    const m = rule.match(/^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?,?)+)?\s*(.*)$/)
-    if (!m) return null
-    const days = m[1] ? expandDays(m[1]) : [0, 1, 2, 3, 4, 5, 6]
-    const times = m[2].trim()
-    if (!days) return null
-    if (times === 'off' || times === 'closed') continue
-    for (const range of times.split(',').map(t => t.trim())) {
-      const t = range.match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/)
-      if (!t) return null
-      const open = `${t[1].padStart(2, '0')}:${t[2]}`
-      let close = `${t[3].padStart(2, '0')}:${t[4]}`
-      if (close === '24:00') close = '23:59'
-      if (close <= open) return null // overnight hours aren't representable yet
-      slots.push({ days, open, close })
-    }
-  }
-  return slots.length ? slots : null
-}
-function expandDays(spec) {
-  const days = new Set()
-  for (const part of spec.split(',').filter(Boolean)) {
-    const [a, b] = part.split('-')
-    if (!(a in DAY) || (b && !(b in DAY))) return null
-    if (!b) { days.add(DAY[a]); continue }
-    for (let d = DAY[a]; ; d = (d + 1) % 7) { days.add(d); if (d === DAY[b]) break }
-  }
-  return [...days].sort()
 }
 
 // ---------- Small helpers ----------

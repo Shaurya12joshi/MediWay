@@ -206,13 +206,14 @@ async function renderQueue(){
 
 // ---------- Tabs ----------
 
-const TAB_CLS = 'tab-btn px-[14px] py-[7px] rounded-[9px] text-[13px] font-semibold border-none cursor-pointer font-sans transition-colors';
+const TAB_CLS = 'tab-btn whitespace-nowrap px-[14px] py-[7px] rounded-[9px] text-[13px] font-semibold border-none cursor-pointer font-sans transition-colors';
 
 function renderShell(){
   document.getElementById('pageBody').innerHTML = `
-    <div class="flex gap-[6px] mb-[22px] bg-[#EFEDE8] p-[4px] rounded-[12px] w-fit">
+    <div class="flex gap-[6px] mb-[22px] bg-[#EFEDE8] p-[4px] rounded-[12px] w-fit max-w-full overflow-x-auto">
       <button class="${TAB_CLS}" data-tab="reviews">Review proofs <span class="tab-count opacity-60" data-count="reviews"></span></button>
       <button class="${TAB_CLS}" data-tab="places">Imported places <span class="tab-count opacity-60" data-count="places"></span></button>
+      <button class="${TAB_CLS}" data-tab="hours">Hours <span class="tab-count opacity-60" data-count="hours"></span></button>
     </div>
     <div id="tabBody"></div>`;
   document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
@@ -227,16 +228,19 @@ async function showTab(tab){
     b.classList.toggle('bg-transparent', !on); b.classList.toggle('text-[#94A3B8]', !on);
   });
   document.getElementById('tabBody').innerHTML = `<div class="text-center py-[48px] text-[#94A3B8] text-[14px]">Loading…</div>`;
-  if (tab === 'places') await renderPlaces(); else await renderQueue();
+  if (tab === 'places') await renderPlaces();
+  else if (tab === 'hours') await renderHours();
+  else await renderQueue();
 }
 
 async function refreshTabCounts(){
-  const [reviews, places] = await Promise.all([
+  const [reviews, places, hours] = await Promise.all([
     supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('proof_status', 'pending'),
     supabase.from('places_staging').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    needsHours(supabase.from('hospitals').select('id', { count: 'exact', head: true })),
   ]);
   const set = (k, n) => { const el = document.querySelector(`[data-count="${k}"]`); if (el) el.textContent = n ? `(${n})` : ''; };
-  set('reviews', reviews.count); set('places', places.count);
+  set('reviews', reviews.count); set('places', places.count); set('hours', hours.count);
 }
 
 // ---------- Imported places ----------
@@ -393,6 +397,238 @@ async function bulkApprove(){
   if (ok) showToast(`Accepted ${data.length} places`);
   refreshTabCounts();
   renderPlaces();
+}
+
+// ---------- Hours: phone queue ----------
+// Live places with no hours (and hospitals whose 24/7 ER status is unknown), ready to call.
+// Saving goes through update_place_hours(); phone-confirmed hours are never overwritten by a script.
+
+const DAY_BUTTONS = [['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6], ['Sun', 0]];
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6], MON_SAT = [1, 2, 3, 4, 5, 6];
+const HOUR_PRESETS = [
+  { label: 'Open 24/7', days: ALL_DAYS, ranges: [['00:00', '23:59']] },
+  { label: 'Mon–Sat 9 AM–9 PM', days: MON_SAT, ranges: [['09:00', '21:00']] },
+  { label: 'Every day 7 AM–8 PM', days: ALL_DAYS, ranges: [['07:00', '20:00']] },
+  { label: 'Mon–Sat 10–2 & 5–8', days: MON_SAT, ranges: [['10:00', '14:00'], ['17:00', '20:00']] },
+];
+const HOURS_PAGE = 20;
+const hoursState = { city: null, kind: 'hospital', phoneOnly: true, offset: 0 };
+let hoursCities = [];
+
+// No hours yet, or a hospital with unknown ER status — and nobody has confirmed it by phone
+function needsHours(q){
+  return q.or('schedule.is.null,schedule.eq.[],and(kind.eq.hospital,er24.is.null)')
+          .or('hours_source.is.null,hours_source.neq.phone');
+}
+
+function hoursQuery(select, opts){
+  const city = hoursCities.find(c => c.slug === hoursState.city);
+  let q = needsHours(supabase.from('hospitals').select(select, opts))
+    .eq('city', city?.name ?? '').eq('kind', hoursState.kind);
+  if (hoursState.phoneOnly) q = q.not('phone', 'is', null);
+  return q;
+}
+
+async function renderHours(){
+  const body = document.getElementById('tabBody');
+  const { data: cities, error } = await supabase.from('cities').select('slug, name, launched').order('created_at');
+  if (error) {
+    body.innerHTML = `<div class="text-center py-[48px] text-[14px] text-[#94A3B8]">Couldn't load cities. Have the Supabase migrations been run?</div>`;
+    return;
+  }
+  hoursCities = cities;
+  hoursState.city ??= cities[0]?.slug;
+  hoursState.offset = 0;
+
+  const kinds = [['hospital', 'Hospitals'], ['pharmacy', 'Pharmacies'], ['clinic', 'Clinics'], ['lab', 'Labs']];
+  body.innerHTML = `
+    <div class="mb-[16px]">
+      <h1 class="font-serif text-[24px]">Opening hours</h1>
+      <p class="text-[13px] text-[#94A3B8] mt-[3px]" id="hoursSummary">…</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-[8px] mb-[18px]">
+      <select id="hoursCity" class="border-[1.5px] border-[#E6E6E1] rounded-[9px] px-[10px] py-[7px] text-[13px] bg-white font-sans">
+        ${cities.map(c => `<option value="${escapeHtml(c.slug)}" ${c.slug === hoursState.city ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+      </select>
+      ${kinds.map(([k, label]) => `<button data-kind="${k}" class="hours-kind px-[11px] py-[6px] rounded-[8px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans ${k === hoursState.kind ? 'border-[#D0423A] bg-[#FDECEA] text-[#D0423A]' : 'border-[#E6E6E1] bg-white text-[#64748B]'}">${label}</button>`).join('')}
+      <label class="flex items-center gap-[6px] text-[12px] text-[#64748B] ml-[4px] cursor-pointer">
+        <input type="checkbox" id="hoursPhoneOnly" ${hoursState.phoneOnly ? 'checked' : ''} class="accent-[#D0423A]"> Only places with a phone number
+      </label>
+    </div>
+    <div class="flex flex-col gap-[12px]" id="hoursList"></div>
+    <button id="hoursMore" class="hidden mt-[14px] w-full py-[10px] rounded-[10px] border-[1.5px] border-dashed border-[#D6D3CC] bg-transparent text-[13px] text-[#64748B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A]">Load more</button>`;
+
+  document.getElementById('hoursCity').addEventListener('change', e => { hoursState.city = e.target.value; renderHours(); });
+  document.querySelectorAll('.hours-kind').forEach(b => b.addEventListener('click', () => { hoursState.kind = b.dataset.kind; renderHours(); }));
+  document.getElementById('hoursPhoneOnly').addEventListener('change', e => { hoursState.phoneOnly = e.target.checked; renderHours(); });
+  document.getElementById('hoursMore').addEventListener('click', loadHoursPage);
+  await Promise.all([loadHoursPage(), refreshHoursSummary()]);
+}
+
+async function refreshHoursSummary(){
+  const { count } = await hoursQuery('id', { count: 'exact', head: true });
+  document.getElementById('hoursSummary').textContent = count
+    ? `${count} to call · places nobody has tried come first`
+    : 'Nothing left to call for this filter.';
+}
+
+async function loadHoursPage(){
+  const { data, error } = await hoursQuery('id, name, kind, address, phone, lat, lng, er24, schedule, hours_source, hours_checked_at')
+    .order('hours_checked_at', { ascending: true, nullsFirst: true }).order('name')
+    .range(hoursState.offset, hoursState.offset + HOURS_PAGE - 1);
+  const list = document.getElementById('hoursList');
+  if (error) { console.error(error); list.insertAdjacentHTML('beforeend', `<p class="text-[13px] text-[#D0423A]">Couldn't load places. Has 20261003_place_hours.sql been run?</p>`); return; }
+  if (!data.length && hoursState.offset === 0) {
+    list.innerHTML = `<div class="text-center py-[48px]"><p class="font-serif text-[20px] mb-[6px]">All done here</p><p class="text-[13px] text-[#94A3B8]">Every place in this list has hours.</p></div>`;
+  }
+  for (const h of data) list.appendChild(hoursCard(h));
+  hoursState.offset += data.length;
+  document.getElementById('hoursMore').classList.toggle('hidden', data.length < HOURS_PAGE);
+}
+
+function hoursCard(h){
+  const color = KIND_COLORS[h.kind] || '#64748B';
+  const isHospital = h.kind === 'hospital';
+  const hasHours = Array.isArray(h.schedule) && h.schedule.length > 0;
+  const tried = h.hours_source === 'unreachable' && h.hours_checked_at
+    ? `No answer on ${new Date(h.hours_checked_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : '';
+  const card = document.createElement('div');
+  card.className = 'bg-white border border-[#E6E6E1] rounded-[14px] p-[14px] sm:p-[18px]';
+  card.innerHTML = `
+    <div class="flex items-start justify-between gap-[10px] flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-[8px] mb-[3px]">
+          <span class="text-[10px] font-bold uppercase tracking-[.08em] px-[7px] py-[2px] rounded-[5px]" style="color:${color};background:${color}14">${escapeHtml(h.kind)}</span>
+          ${tried ? `<span class="text-[11px] text-[#B45309]">${tried}</span>` : ''}
+          ${hasHours ? `<span class="text-[11px] text-[#94A3B8]">Has hours · ER status unknown</span>` : ''}
+        </div>
+        <div class="font-serif text-[17px] text-[#1E293B] break-words">${escapeHtml(h.name)}</div>
+        <div class="text-[12px] text-[#64748B] mt-[2px] break-words">${escapeHtml(h.address || 'No address')} · <a href="https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}" target="_blank" rel="noopener" class="text-[#D0423A] underline">map</a></div>
+      </div>
+      ${h.phone ? `<a href="tel:${escapeHtml(h.phone.replace(/[^\d+]/g, ''))}" class="shrink-0 flex items-center gap-[7px] bg-[#1E293B] hover:bg-black text-white no-underline px-[14px] py-[9px] rounded-[10px] text-[14px] font-semibold">📞 ${escapeHtml(h.phone)}</a>` : `<span class="text-[12px] text-[#94A3B8]">No phone</span>`}
+    </div>
+
+    <div class="mt-[14px] pt-[14px] border-t border-[#F0EFEA] ${hasHours ? 'hidden' : ''}" data-hours-editor>
+      <div class="flex flex-wrap gap-[6px] mb-[10px]">
+        ${HOUR_PRESETS.map((p, i) => `<button type="button" data-preset="${i}" class="px-[10px] py-[6px] rounded-[8px] text-[12px] font-medium border-[1.5px] border-[#E6E6E1] bg-white text-[#3F3F46] cursor-pointer font-sans hover:border-[#1E293B]">${p.label}</button>`).join('')}
+      </div>
+      <div class="flex flex-wrap items-center gap-[5px] mb-[8px]">
+        ${DAY_BUTTONS.map(([label, d]) => `<button type="button" data-day="${d}" aria-pressed="false" class="day-btn w-[42px] py-[6px] rounded-[7px] text-[12px] font-medium border-[1.5px] border-[#E6E6E1] bg-white text-[#64748B] cursor-pointer font-sans">${label}</button>`).join('')}
+      </div>
+      <div class="flex flex-wrap items-center gap-[8px]" data-ranges>
+        ${rangeRow('', '')}
+      </div>
+      <button type="button" data-add-range class="mt-[6px] text-[12px] text-[#D0423A] bg-transparent border-none cursor-pointer font-sans p-0">+ Add evening session</button>
+    </div>
+
+    ${isHospital ? `
+    <div class="mt-[12px] flex flex-wrap items-center gap-[6px]">
+      <span class="text-[13px] text-[#3F3F46] mr-[4px]">24/7 emergency room?</span>
+      ${[['yes', 'Yes'], ['no', 'No'], ['unknown', 'Not sure']].map(([v, l]) => `<button type="button" data-er="${v}" class="er-btn px-[11px] py-[6px] rounded-[8px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans ${(v === 'yes' && h.er24 === true) || (v === 'no' && h.er24 === false) ? 'border-[#1E293B] bg-[#1E293B] text-white' : 'border-[#E6E6E1] bg-white text-[#64748B]'}">${l}</button>`).join('')}
+    </div>` : ''}
+
+    <div class="mt-[14px] flex flex-wrap gap-[8px] items-center">
+      <button type="button" data-save class="bg-[#16A34A] hover:bg-[#15803D] text-white border-none px-[16px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans">Save</button>
+      <button type="button" data-unreachable class="bg-white border-[1.5px] border-[#E6E6E1] text-[#3F3F46] px-[14px] py-[9px] rounded-[9px] text-[13px] font-semibold cursor-pointer font-sans hover:border-[#B45309] hover:text-[#B45309]">No answer</button>
+      <button type="button" data-skip class="bg-transparent border-none text-[13px] text-[#94A3B8] cursor-pointer font-sans hover:text-[#1E293B]">Skip</button>
+      <span data-error class="text-[12px] text-[#D0423A]"></span>
+    </div>`;
+
+  const editor = card.querySelector('[data-hours-editor]');
+  const ranges = card.querySelector('[data-ranges]');
+  const setDays = days => card.querySelectorAll('.day-btn').forEach(b => {
+    const on = days.includes(+b.dataset.day);
+    b.setAttribute('aria-pressed', on);
+    b.classList.toggle('bg-[#1E293B]', on); b.classList.toggle('text-white', on); b.classList.toggle('border-[#1E293B]', on);
+    b.classList.toggle('bg-white', !on); b.classList.toggle('text-[#64748B]', !on); b.classList.toggle('border-[#E6E6E1]', !on);
+  });
+  const selectedDays = () => [...card.querySelectorAll('.day-btn[aria-pressed="true"]')].map(b => +b.dataset.day).sort();
+  const addRange = card.querySelector('[data-add-range]');
+  // Two sessions (morning + evening OPD) is the most a day needs here
+  const syncAddRange = () => addRange.classList.toggle('hidden', ranges.querySelectorAll('[data-range]').length >= 2);
+  const setRanges = list => { ranges.innerHTML = list.map(([o, c], i) => rangeRow(o, c, i > 0)).join(''); syncAddRange(); };
+
+  card.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const p = HOUR_PRESETS[b.dataset.preset];
+    setDays(p.days); setRanges(p.ranges);
+  }));
+  card.querySelectorAll('.day-btn').forEach(b => b.addEventListener('click', () => {
+    const days = new Set(selectedDays());
+    days.has(+b.dataset.day) ? days.delete(+b.dataset.day) : days.add(+b.dataset.day);
+    setDays([...days]);
+  }));
+  addRange.addEventListener('click', () => {
+    if (ranges.querySelectorAll('[data-range]').length < 2) ranges.insertAdjacentHTML('beforeend', rangeRow('17:00', '20:00', true));
+    syncAddRange();
+  });
+  ranges.addEventListener('click', e => {
+    if (e.target.closest('[data-remove-range]')) { e.target.closest('[data-range]').remove(); syncAddRange(); }
+  });
+
+  let er = h.er24 === true ? 'yes' : h.er24 === false ? 'no' : null;
+  card.querySelectorAll('.er-btn').forEach(b => b.addEventListener('click', () => {
+    er = b.dataset.er;
+    card.querySelectorAll('.er-btn').forEach(x => {
+      const on = x === b;
+      x.classList.toggle('bg-[#1E293B]', on); x.classList.toggle('text-white', on); x.classList.toggle('border-[#1E293B]', on);
+      x.classList.toggle('bg-white', !on); x.classList.toggle('text-[#64748B]', !on); x.classList.toggle('border-[#E6E6E1]', !on);
+    });
+  }));
+
+  const showError = msg => { card.querySelector('[data-error]').textContent = msg; };
+  const done = msg => {
+    card.remove();
+    hoursState.offset = Math.max(0, hoursState.offset - 1);
+    showToast(msg); refreshHoursSummary(); refreshTabCounts();
+  };
+
+  card.querySelector('[data-save]').addEventListener('click', async () => {
+    showError('');
+    const days = selectedDays();
+    const slots = [...ranges.querySelectorAll('[data-range]')].map(r => {
+      const [open, close] = [...r.querySelectorAll('input')].map(i => i.value);
+      return { open, close };
+    }).filter(s => s.open || s.close);
+    let schedule = null;
+    if (!editor.classList.contains('hidden') && (days.length || slots.length)) {
+      if (!days.length) return showError('Pick the days it’s open.');
+      if (!slots.length || slots.some(s => !s.open || !s.close)) return showError('Enter opening and closing times.');
+      if (slots.some(s => s.close <= s.open)) return showError('Closing time must be after opening time (overnight hours aren’t supported yet).');
+      schedule = slots.map(s => ({ days, open: s.open, close: s.close }));
+    }
+    const hasEr24 = er === 'yes' ? true : er === 'no' ? false : null;
+    if (!schedule && !(isHospital && hasEr24 !== null)) {
+      return showError(isHospital ? 'Add hours or answer the emergency question.' : 'Add the opening hours, or press “No answer”.');
+    }
+    const ok = await saveHours(h.id, 'verified', schedule, isHospital ? hasEr24 : null, card);
+    if (ok) done(`Saved ${h.name}`);
+  });
+  card.querySelector('[data-unreachable]').addEventListener('click', async () => {
+    if (await saveHours(h.id, 'unreachable', null, null, card)) done('Noted — it’ll come back later in the queue');
+  });
+  card.querySelector('[data-skip]').addEventListener('click', () => card.remove());
+  return card;
+}
+
+function rangeRow(open, close, removable = false){
+  return `<div data-range class="flex items-center gap-[6px]">
+    <input type="time" value="${open}" class="border-[1.5px] border-[#E6E6E1] rounded-[8px] px-[8px] py-[5px] text-[13px] font-sans">
+    <span class="text-[12px] text-[#94A3B8]">to</span>
+    <input type="time" value="${close}" class="border-[1.5px] border-[#E6E6E1] rounded-[8px] px-[8px] py-[5px] text-[13px] font-sans">
+    ${removable ? `<button type="button" data-remove-range class="text-[#94A3B8] bg-transparent border-none cursor-pointer text-[16px] leading-none px-[4px]" title="Remove">×</button>` : ''}
+  </div>`;
+}
+
+async function saveHours(placeId, outcome, schedule, hasEr24, card){
+  card.querySelectorAll('button').forEach(b => b.disabled = true);
+  const { error } = await supabase.rpc('update_place_hours', { place_id: placeId, outcome, new_schedule: schedule, has_er24: hasEr24 });
+  if (error) {
+    console.error(error);
+    card.querySelectorAll('button').forEach(b => b.disabled = false);
+    card.querySelector('[data-error]').textContent = error.message || 'Something went wrong — try again';
+    return false;
+  }
+  return true;
 }
 
 async function boot(){

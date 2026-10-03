@@ -127,6 +127,7 @@ function detectLocation() {
         showToast(`MediWay isn't in your area yet. Showing ${city.name}.`);
         setOrigin(cityCentre(city));
       }
+      resetPaging();
       await loadData();
     },
     (error) => {
@@ -750,6 +751,7 @@ function renderDoctors() {
 
   if (filtered.length === 0) {
     grid.innerHTML = ''; label.style.display = 'none';
+    renderPager('doctorsPager', 0, false);
     // Only an empty page overall is "no results": "Pharmacies" has no doctors by design
     noRes.classList.toggle('hidden', placeCount > 0 && !loadFailed);
     noRes.innerHTML = loadFailed ? `
@@ -763,13 +765,17 @@ function renderDoctors() {
   noRes.classList.add('hidden'); label.style.display = '';
   label.textContent = `Doctors · ${filtered.length} result${filtered.length !== 1 ? 's' : ''}`;
 
-  grid.innerHTML = filtered.map((d, i) => {
+  const visible = filtered.slice(0, doctorsShown);
+  const animateFrom = doctorsAppendFrom; doctorsAppendFrom = 0;
+  renderPager('doctorsPager', filtered.length - visible.length, doctorsShown > DOCTORS_PAGE, 'moreDoctors', 'fewerDoctors', DOCTORS_PAGE);
+
+  grid.innerHTML = visible.map((d, i) => {
     const displayRating = d.rating ?? d.google_rating ?? '—';
     const displayReviews = d.reviews ?? d.google_reviews ?? 0;
     const status = getStatus(d);
     const timings = scheduleText(d);
     return `
-    <div class="animate-fadeUp bg-white border border-[#E2E8F0] ${d.featured ? 'border-[#D0423A] shadow-[0_0_0_1px_#D0423A,0_4px_16px_rgba(208,66,58,.08)]' : ''} rounded-2xl p-4 sm:p-5 flex gap-3 sm:gap-4 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,.07)] hover:border-slate-300 transition-all cursor-default mb-3" style="animation-delay:${i*.05}s;" id="card-${d.id}">
+    <div class="${i >= animateFrom ? 'animate-fadeUp' : ''} bg-white border border-[#E2E8F0] ${d.featured ? 'border-[#D0423A] shadow-[0_0_0_1px_#D0423A,0_4px_16px_rgba(208,66,58,.08)]' : ''} rounded-2xl p-4 sm:p-5 flex gap-3 sm:gap-4 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,.07)] hover:border-slate-300 transition-all cursor-default mb-3" style="animation-delay:${Math.min(i - animateFrom, 8) * .05}s;" id="card-${d.id}">
       <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-[14px] shrink-0 flex items-center justify-center text-[18px] sm:text-[22px] font-serif text-white" style="background:${d.avatar_bg};">${d.initials}</div>
       <div class="flex-1 min-w-0">
         <div class="flex items-start justify-between gap-2 mb-[3px]">
@@ -827,14 +833,35 @@ function renderDoctors() {
   }).join('');
 }
 
-// "All" previews the nearest few places; a chosen kind lists them all, a page at a time
-const PLACES_PREVIEW = 6, PLACES_PAGE = 30;
-let placesShown = PLACES_PREVIEW;
-function resetPlacesPaging() { placesShown = KINDS[filters.type] ? PLACES_PAGE : PLACES_PREVIEW; }
+// ---------- Paging ----------
+// Both lists show a page at a time so neither takes over the screen. "All" previews only a few
+// places so the doctors below stay in view; choosing a kind starts with a full page of it.
+const PLACES_PREVIEW = 6, PLACES_PAGE = 12, DOCTORS_PAGE = 10;
+let placesShown = PLACES_PREVIEW, doctorsShown = DOCTORS_PAGE;
+// Cards before these indexes are already on screen: only the newly loaded ones animate in
+let placesAppendFrom = 0, doctorsAppendFrom = 0;
 
-function showMorePlaces() {
-  placesShown = placesShown === PLACES_PREVIEW && !KINDS[filters.type] ? PLACES_PAGE : placesShown + PLACES_PAGE;
-  renderHospitals();
+const initialPlaces = () => KINDS[filters.type] ? PLACES_PAGE : PLACES_PREVIEW;
+function resetPaging() { placesShown = initialPlaces(); doctorsShown = DOCTORS_PAGE; }
+
+function morePlaces()   { placesAppendFrom = placesShown;   placesShown += PLACES_PAGE;   renderHospitals(); }
+function moreDoctors()  { doctorsAppendFrom = doctorsShown; doctorsShown += DOCTORS_PAGE; renderDoctors(); }
+function fewerPlaces()  { placesShown = initialPlaces(); renderHospitals(); scrollToList('placesLabel'); }
+function fewerDoctors() { doctorsShown = DOCTORS_PAGE;   renderDoctors();   scrollToList('doctorLabel'); }
+
+// After collapsing, the list may have shrunk above the viewport: bring its heading back into view
+function scrollToList(labelId) {
+  const label = document.getElementById(labelId);
+  if (label.getBoundingClientRect().top < 0) label.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderPager(id, left, canCollapse, more, fewer, page) {
+  const el = document.getElementById(id);
+  el.classList.toggle('hidden', left <= 0 && !canCollapse);
+  el.innerHTML = `
+    ${left > 0 ? `<button type="button" onclick="${more}()" class="flex-1 py-2.5 rounded-xl border-[1.5px] border-dashed border-[#CBD5E1] bg-transparent text-[13px] font-medium text-[#1E293B] cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-colors">
+      Load ${Math.min(left, page)} more <span class="text-[#94A3B8] font-normal">· ${left} left</span></button>` : ''}
+    ${canCollapse ? `<button type="button" onclick="${fewer}()" class="${left > 0 ? '' : 'flex-1 '}px-4 py-2.5 rounded-xl border-[1.5px] border-[#E2E8F0] bg-white text-[13px] font-medium text-[#64748B] cursor-pointer font-sans hover:border-[#1E293B] hover:text-[#1E293B] transition-colors">Show fewer</button>` : ''}`;
 }
 
 // Imported addresses often start with a house or shop number: show the locality instead
@@ -856,11 +883,11 @@ function previewMix(places, n) {
   return picked.sort((a, b) => a.distance_km - b.distance_km);
 }
 
-function placeCard(h, i) {
+function placeCard(h, i, animateFrom = 0) {
   const k = kindOf(h), status = placeStatus(h);
   const where = [h.distance_km != null ? `${h.distance_km} km` : null, localityOf(h.address)].filter(Boolean).join(' · ');
   return `
-    <div class="animate-fadeUp bg-white border border-[#E2E8F0] rounded-2xl pl-4 pr-3 py-4 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,.06)] hover:border-slate-300 transition-all" style="animation-delay:${Math.min(i, 8) * .05}s;">
+    <div class="${i >= animateFrom ? 'animate-fadeUp' : ''} bg-white border border-[#E2E8F0] rounded-2xl pl-4 pr-3 py-4 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,.06)] hover:border-slate-300 transition-all" style="animation-delay:${Math.min(i - animateFrom, 8) * .05}s;">
       <a href="${dirUrl(placeDestination(h))}" target="_blank" rel="noopener" class="flex items-center gap-3 flex-1 min-w-0 no-underline" title="Directions">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style="background:${k.color}14;color:${k.color}">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${k.icon}</svg>
@@ -885,12 +912,18 @@ function renderHospitals() {
   const capped = HOSPITALS.length >= PLACES_FETCH_LIMIT && all.length === HOSPITALS.length;
   document.getElementById('placesLabel').textContent =
     `${kind ? kind.plural : 'Nearby hospitals, clinics & pharmacies'} · ${all.length}${capped ? '+' : ''}`;
-  const shown = placesShown === PLACES_PREVIEW && !kind ? previewMix(all, PLACES_PREVIEW) : all.slice(0, placesShown);
-  document.getElementById('hospitalGrid').innerHTML = shown.map(placeCard).join('');
-  const more = document.getElementById('morePlaces');
-  const hidden = all.length - placesShown;
-  more.classList.toggle('hidden', hidden <= 0);
-  more.textContent = placesShown === PLACES_PREVIEW && !kind ? `Show more nearby places (${hidden})` : `Show ${Math.min(hidden, PLACES_PAGE)} more`;
+  const shown = visiblePlaces(all);
+  const animateFrom = placesAppendFrom; placesAppendFrom = 0;
+  document.getElementById('hospitalGrid').innerHTML = shown.map((h, i) => placeCard(h, i, animateFrom)).join('');
+  renderPager('placesPager', all.length - shown.length, placesShown > initialPlaces(), 'morePlaces', 'fewerPlaces', PLACES_PAGE);
+}
+
+// In "All", the preview mix stays on screen and loading more adds the next nearest places after it
+function visiblePlaces(all) {
+  if (KINDS[filters.type]) return all.slice(0, placesShown);
+  const preview = previewMix(all, PLACES_PREVIEW);
+  const extra = all.filter(h => !preview.includes(h)).slice(0, placesShown - preview.length);
+  return [...preview, ...extra];
 }
 
 function renderMapCards() {
@@ -1012,7 +1045,7 @@ function setView(v) {
 
 async function setFilter(key, value, btn) {
   filters[key] = value;
-  resetPlacesPaging();
+  resetPaging();
   if (btn) {
     btn.closest('[id$="Filter"]').querySelectorAll('.chip').forEach(c => {
       c.classList.remove('active','border-[#D0423A]','bg-[#FDECEA]','text-[#D0423A]','font-medium');
@@ -1028,6 +1061,7 @@ async function setFilter(key, value, btn) {
 async function toggleOption(key, row) {
   filters[key] = !filters[key];
   row.querySelector('.toggle').classList.toggle('on', filters[key]);
+  resetPaging();
   if (SERVER_FILTERS.includes(key)) await loadData(); else render();
 }
 
@@ -1072,7 +1106,7 @@ async function resetFilters() {
   document.querySelectorAll('.toggle').forEach(t => t.classList.remove('on'));
   document.getElementById('distVal').textContent = '20 km';
   document.querySelector('input[type=range]').value = 20;
-  resetPlacesPaging();
+  resetPaging();
 
   await loadData();
   showToast('Filters reset');
@@ -1115,7 +1149,7 @@ function toggleFilters() {
 
 document.getElementById('searchInput').addEventListener('input', e => {
   searchQuery = e.target.value.trim();
-  resetPlacesPaging();
+  resetPaging();
   render();
 });
 
@@ -1204,4 +1238,7 @@ window.zoomMap = zoomMap;
 window.fitToResults = fitToResults;
 window.setActivePin = setActivePin;
 window.focusDoctor = focusDoctor;
-window.showMorePlaces = showMorePlaces;
+window.morePlaces = morePlaces;
+window.fewerPlaces = fewerPlaces;
+window.moreDoctors = moreDoctors;
+window.fewerDoctors = fewerDoctors;
