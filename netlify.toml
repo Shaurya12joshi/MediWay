@@ -7,3 +7,36 @@
   # the Supabase anon key is protected by Row Level Security, the Mappls key by its
   # domain whitelist. Tell Netlify's secrets scanner they are expected there.
   SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_MAPPLS_KEY"
+
+# Addresses from the multi-page site (bookmarks, shared links, Supabase invite emails) move to
+# their clean URLs. Query strings carry over; browsers keep the #hash. src/router.jsx does the same.
+[[redirects]]
+  from = "/searchResult.html"
+  to = "/search"
+  status = 301
+
+[[redirects]]
+  from = "/profile.html"
+  to = "/profile"
+  status = 301
+
+[[redirects]]
+  from = "/review.html"
+  to = "/review"
+  status = 301
+
+[[redirects]]
+  from = "/auth.html"
+  to = "/auth"
+  status = 301
+
+[[redirects]]
+  from = "/admin.html"
+  to = "/admin"
+  status = 301
+
+# Single-page app: React Router handles every other path
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -66,16 +66,15 @@ The UI is designed to work across different screen sizes, including desktop and 
 
 | Technology       | Purpose                              |
 | ---------------- | ------------------------------------ |
-| **HTML**         | Page structure                       |
+| **React**        | User interface                       |
+| **React Router** | Pages and clean URLs (`/search`, `/profile?id=…`) |
+| **Redux Toolkit**| App state, and Supabase data via RTK Query |
 | **JavaScript**   | Application logic and interactions   |
 | **Tailwind CSS** | Styling and responsive UI            |
 | **Vite**         | Development server and build tooling |
 | **Supabase**     | Backend/database integration         |
 | **Mappls**       | Map and location functionality       |
-| **Leaflet**      | Map interface                        |
 | **Git & GitHub** | Version control                      |
-
-The project configuration currently uses Vite, Tailwind CSS and `@supabase/supabase-js`.
 
 ---
 
@@ -84,22 +83,30 @@ The project configuration currently uses Vite, Tailwind CSS and `@supabase/supab
 ```text
 MediWay/
 │
-├── images/              # Images and visual assets
-│
-├── js/                  # JavaScript files
+├── public/              # Files served as-is (favicon)
 │
 ├── src/
-│   ├── input.css        # Tailwind input stylesheet
-│   └── output.css       # Generated CSS
+│   ├── main.jsx         # Entry: Redux store + router
+│   ├── router.jsx       # Routes, and redirects from the old .html addresses
+│   ├── index.css        # Tailwind input stylesheet
+│   ├── assets/          # Images bundled by Vite
+│   ├── lib/             # Supabase client, location and opening-hours helpers
+│   ├── store/           # Redux Toolkit store, slices and RTK Query API
+│   ├── components/      # Shared UI (footer, icons, toast…)
+│   └── pages/
+│       ├── Home.jsx         # /         Landing page
+│       ├── search/          # /search   Search, filters, map and directions
+│       ├── Profile.jsx      # /profile  Doctor profile and reviews
+│       ├── Review.jsx       # /review   Write a review
+│       ├── Auth.jsx         # /auth     Sign in, waitlist, invite setup
+│       └── admin/           # /admin    Review proofs, imported places, hours
 │
+├── scripts/             # Data import scripts (Node)
+├── supabase/            # SQL migrations
 ├── dist/                # Build output
 │
-├── index.html           # MediWay landing page
-├── auth.html            # Authentication page
-├── profile.html         # User profile
-├── searchResult.html    # Healthcare search & results
-├── review.html          # Review page
-├── admin.html           # Admin interface
+├── index.html           # The single HTML page React renders into
+├── netlify.toml         # Build settings and SPA routing for Netlify
 │
 ├── package.json
 ├── package-lock.json
