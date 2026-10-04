@@ -95,6 +95,68 @@ function fromNextPeriods(html) {
   return out
 }
 
+// ---------- Plain-text hours (read by Gemini, see ai-hours.mjs) ----------
+
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—' }
+
+export function htmlToText(html) {
+  return html
+    .replace(/<(script|style|noscript|svg|template)\b[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6]|\/section|\/footer|\/td|\/dt|\/dd)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, e) => e[0] === '#'
+      ? String.fromCodePoint(parseInt(e.slice(e[1].toLowerCase() === 'x' ? 2 : 1), e[1].toLowerCase() === 'x' ? 16 : 10))
+      : ENTITIES[e.toLowerCase()] ?? m)
+    .split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n')
+}
+
+// A time of day, "24x7"/"24 hours", or Hindi time words: without one of these a page states no hours
+const TIME = /\b\d{1,2}\s*([:.]\s*\d{2})?\s*(a\.?m\.?|p\.?m\.?)(?![a-z])|\b([01]?\d|2[0-3])[:.][0-5]\d\b|\b24\s*[x×*\/]\s*7\b|\b24\s*(hours?|hrs?)\b|round[- ]the[- ]clock|बजे|सुबह|शाम|24 घंटे/i
+const HOURS_WORDS = /timing|hours|open|closed|opd|consult|visit|emergency|casualty|\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b|daily|every ?day|सोम|मंगल|बुध|गुरु|शुक्र|शनि|रवि|समय/i
+const MAX_EXCERPT_CHARS = 6000
+// What foreign travellers ask about: insurance and payment, English, travel medicine, a female doctor
+const TRAVELLER_WORDS = /insurance|cashless|\btpa\b|mediclaim|credit card|debit card|\bvisa\b|mastercard|\bamex\b|card payment|vaccin|rabies|travel (medicine|clinic|health)|yellow fever|lady doctor|female doctor|woman doctor|english[- ]speaking|international patient|foreign patient/i
+
+// Lines about an emergency service go along even without a time in them ("Emergency & Trauma care",
+// "No emergency services"): they settle the most important question for a hospital
+const EMERGENCY_WORDS = /emergenc|casualty|trauma|accident|आपातकाल|इमरजेंसी/i
+
+// The lines that talk about hours, emergencies or traveller details, each with its neighbours for context.
+// Only these go to Gemini: a whole page would cost ~20x more and add nothing.
+export function pageExcerpts(text) {
+  const lines = text.split('\n')
+  const keep = new Set()
+  lines.forEach((line, i) => {
+    if (TIME.test(line) || TRAVELLER_WORDS.test(line) || EMERGENCY_WORDS.test(line) || (HOURS_WORDS.test(line) && TIME.test(lines[i + 1] ?? ''))) {
+      for (let j = Math.max(0, i - 2); j <= Math.min(lines.length - 1, i + 2); j++) keep.add(j)
+    }
+  })
+  if (!keep.size) return null
+  let out = ''
+  let last = -2
+  for (const i of [...keep].sort((a, b) => a - b)) {
+    const piece = (i === last + 1 ? '' : '\n…\n') + lines[i] + '\n'
+    if (out.length + piece.length > MAX_EXCERPT_CHARS) break
+    out += piece
+    last = i
+  }
+  return out.trim()
+}
+
+// Hours often live on a separate page: the first same-site link that looks like contact or timings
+export function infoPageUrl(html, pageUrl) {
+  const here = new URL(pageUrl)
+  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const label = m[2].replace(/<[^>]+>/g, ' ')
+    if (!/contact|timing|hours|opd|reach us|visit us|location/i.test(m[1] + ' ' + label)) continue
+    let url
+    try { url = new URL(m[1], here) } catch { continue }
+    if (url.origin === here.origin && url.pathname !== here.pathname && /^https?:$/.test(url.protocol)) return url.href
+  }
+  return null
+}
+
 function* walk(value) {
   if (Array.isArray(value)) { for (const v of value) yield* walk(v); return }
   if (!value || typeof value !== 'object') return
