@@ -10,8 +10,9 @@ import { AdminLogin, NotAuthorized } from './AdminLogin';
 import ReviewQueue from './ReviewQueue';
 import PlacesTab from './PlacesTab';
 import HoursTab from './HoursTab';
+import ApplicationsTab from './ApplicationsTab';
 
-const TABS = [['reviews', 'Review proofs'], ['places', 'Imported places'], ['hours', 'Hours']];
+const TABS = [['reviews', 'Review proofs'], ['places', 'Imported places'], ['hours', 'Hours'], ['applications', 'Doctor applications']];
 const TAB_KEY = 'mw.adminTab';
 const TAB = 'whitespace-nowrap px-[14px] py-[7px] rounded-[9px] text-[13px] font-semibold border-none cursor-pointer font-sans transition-colors';
 
@@ -24,7 +25,7 @@ function AdminTabs() {
   const { data: counts } = useAdminCountsQuery();
   // Kept here so each tab's filters survive switching away and back
   const [placesState, setPlacesState] = useState({ city: null, kind: 'all', view: 'review' });
-  const [hoursState, setHoursState] = useState({ city: null, kind: 'hospital', phoneOnly: true });
+  const [hoursState, setHoursState] = useState({ city: null, kind: 'hospital', phoneOnly: true, nearTourists: true, view: 'suggestions' });
 
   function show(t) {
     setTab(t);
@@ -43,6 +44,7 @@ function AdminTabs() {
       </div>
       {tab === 'places' ? <PlacesTab state={placesState} setState={setPlacesState} />
         : tab === 'hours' ? <HoursTab state={hoursState} setState={setHoursState} />
+        : tab === 'applications' ? <ApplicationsTab />
         : <ReviewQueue />}
     </>
   );

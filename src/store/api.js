@@ -60,9 +60,54 @@ export const api = createApi({
         ]);
         const error = docs.error || facilities.error;
         if (error) return { error: toError(error) };
-        return { data: { doctors: docs.data ?? [], places: facilities.data ?? [] } };
+
+        // Visitors' ratings for these places (20261004_tourist_features.sql); missing ratings never block the search
+        const placesFound = facilities.data ?? [];
+        if (placesFound.length) {
+          const { data: ratings } = await supabase.from('place_ratings').select('place_id, rating, reviews')
+            .in('place_id', placesFound.map(p => p.id));
+          const byId = new Map((ratings ?? []).map(r => [r.place_id, r]));
+          for (const p of placesFound) {
+            const r = byId.get(p.id);
+            if (r) { p.place_rating = +r.rating; p.place_reviews = r.reviews; }
+          }
+        }
+        return { data: { doctors: docs.data ?? [], places: placesFound } };
       },
       keepUnusedDataFor: 600,
+    }),
+
+    // What the marketing pages may claim: live cities and how many places are listed, straight from the data
+    getSiteStats: build.query({
+      async queryFn() {
+        const [cities, places] = await Promise.all([
+          supabase.from('cities').select('name').eq('launched', true).order('created_at'),
+          supabase.from('hospitals').select('id', { count: 'exact', head: true }),
+        ]);
+        const error = cities.error || places.error;
+        if (error) return { error: toError(error) };
+        return { data: { cities: cities.data.map(c => c.name), places: places.count ?? 0 } };
+      },
+      keepUnusedDataFor: 3600,
+    }),
+
+    // Listed places by name, for "is your clinic already on MediWay?" on the join form
+    findPlaces: build.query({
+      queryFn: ({ city, text }) => run(supabase.from('hospitals')
+        .select('id, name, address, kind')
+        .eq('city', city)
+        .ilike('name', `%${text.replace(/[%_,()]/g, ' ').trim()}%`)
+        .order('name')
+        .limit(8)),
+    }),
+
+    // The public "Join MediWay" form; an admin approves it in Admin -> Applications
+    applyAsDoctor: build.mutation({
+      queryFn: application => run(supabase.from('doctor_applications').insert(application)),
+    }),
+
+    getPlace: build.query({
+      queryFn: id => run(supabase.from('hospitals').select('id, name, address, kind, city').eq('id', id).single()),
     }),
 
     getDoctor: build.query({
@@ -102,6 +147,10 @@ export const api = createApi({
 export const {
   useGetCitiesQuery,
   useGetNearbyQuery,
+  useGetSiteStatsQuery,
+  useFindPlacesQuery,
+  useApplyAsDoctorMutation,
+  useGetPlaceQuery,
   useGetDoctorQuery,
   useGetReviewsQuery,
   useAddReviewMutation,

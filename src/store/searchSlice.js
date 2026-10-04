@@ -9,6 +9,9 @@ export const DEFAULT_FILTERS = {
   type: 'all', specialty: 'all', language: 'all',
   distance: 20, rating: 0,
   openNow: false, walkIn: false, english: false, insurance: false,
+  er24: false, // only hospitals with a 24/7 emergency room (doctors aren't affected)
+  // For travellers: places we know offer it (english and femaleDoctor also apply to doctors)
+  intlInsurance: false, cards: false, travelClinic: false, femaleDoctor: false,
 };
 
 // Both lists show a page at a time so neither takes over the screen. "All" previews only a few

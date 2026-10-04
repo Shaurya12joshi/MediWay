@@ -2,16 +2,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { getStatus } from '../../lib/hours';
-import { openDirections, routeFound, setMapSort } from '../../store/searchSlice';
+import { DEFAULT_FILTERS, openDirections, routeFound, setMapSort, toggleOption } from '../../store/searchSlice';
 import { Stars } from '../../components/ui';
+import { useT } from '../../i18n';
+import { rememberVisit } from '../../lib/visits';
 import { KindIcon, kindOf, placeStatus } from './kinds';
 import { hasCoords, sortDoctors, specialtyText } from './filtering';
+import FilterSidebar from './FilterSidebar';
 import {
   addRouteLayers, boundsOf, doctorPinHtml, doctorPopupHtml, emptyFeatureCollection,
   fetchRoute, loadMappls, placePinHtml, placePopupHtml,
 } from './mappls';
 
-const SORTS = [['rating', 'Top rated'], ['distance', 'Nearest'], ['name', 'A–Z']];
+const SORTS = [['rating', 'sort.rating'], ['distance', 'sort.distance'], ['name', 'sort.name']];
+const QUICK_FILTERS = [['er24', 'filter.quickEr'], ['openNow', 'filter.quickOpen']];
 const SORT_BTN = 'px-[11px] py-[5px] rounded-[7px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans transition-all';
 const CARD = 'map-card bg-white border border-[#E2E8F0] rounded-xl p-3.5 flex gap-3 cursor-pointer hover:border-[#D0423A] hover:shadow-[0_2px_12px_rgba(208,66,58,.12)] transition-all';
 
@@ -44,10 +48,15 @@ let kept = null;
 // The map, its controls and the results pane beside it. Mounted the first time the map view
 // opens and then kept (hidden in list view), so the map isn't rebuilt on every switch.
 // `doctors` and `places` must be memoised by the caller: a new array rebuilds every marker.
-export default function MapView({ visible, doctors, places, showDoctorCards }) {
+// The results pane also holds the filters (the list view's sidebar is hidden here): a Filters button
+// swaps the cards for the full filter panel, and the most-wanted ones are one tap away next to the sort.
+export default function MapView({ visible, doctors, places, showDoctorCards, resultCount, filtersOpen, onToggleFilters, onReset }) {
+  const t = useT();
+  const lang = useSelector(s => s.prefs.lang);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { origin, mapSortBy, dirDoctor } = useSelector(s => s.search);
+  const { origin, mapSortBy, dirDoctor, filters } = useSelector(s => s.search);
+  const activeFilters = Object.keys(DEFAULT_FILTERS).filter(k => filters[k] !== DEFAULT_FILTERS[k]).length;
 
   const hostEl = useRef(null), hintEl = useRef(null), lastDir = useRef(null);
   const latest = useRef({ doctors, origin });
@@ -152,7 +161,7 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
           html: '<div class="mw-user"></div>',
           width: 22,
           height: 22,
-          popupHtml: '<div class="text-[13px] font-semibold text-[#1E293B]">You are here</div>',
+          popupHtml: `<div class="text-[13px] font-semibold text-[#1E293B]">${t('map.youAreHere')}</div>`,
           popupOptions: { offset: [0, -14], closeButton: false },
         });
 
@@ -225,7 +234,7 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
       kept.fitted = true;
       if (!dirDoctor) fitToResults({ animate: false });
     }
-  }, [ready, doctors, places, origin]); // not dirDoctor: opening directions mustn't rebuild the markers
+  }, [ready, doctors, places, origin, lang]); // not dirDoctor: opening directions mustn't rebuild the markers
 
   // A new origin (location detected, city changed): move "you are here" and go there
   useEffect(() => {
@@ -281,9 +290,11 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
       const dir = e.target.closest('[data-open-dir]');
       if (dir) {
         const d = latest.current.doctors.find(x => String(x.id) === dir.dataset.openDir);
-        if (d) dispatch(openDirections(d));
+        if (d) { rememberVisit('doctor', d.id, d.name); dispatch(openDirections(d)); }
         return;
       }
+      const visit = e.target.closest('[data-visit-place]');
+      if (visit) rememberVisit('place', visit.dataset.visitPlace, visit.dataset.visitName);
       const link = e.target.closest('a[data-spa]');
       if (link) {
         e.preventDefault();
@@ -304,40 +315,40 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
         <div ref={hostEl} className="w-full h-full"></div>
 
         <div ref={hintEl} className="absolute inset-0 z-[6] flex items-center justify-center bg-[#1E293B]/45 text-white text-[14px] font-medium pointer-events-none opacity-0 transition-opacity duration-300">
-          Use two fingers to move the map
+          {t('map.twoFingers')}
         </div>
 
         <div className={`absolute inset-0 z-[5] flex items-center justify-center bg-[#F3ECE4] transition-opacity duration-500 ${loaded ? 'opacity-0 pointer-events-none' : ''}`}>
           {failed
-            ? <p className="text-[13px] text-[#64748B]">Map couldn’t load. Check your connection and try again.</p>
+            ? <p className="text-[13px] text-[#64748B]">{t('map.failed')}</p>
             : <div className="flex items-center gap-2.5 text-[13px] text-[#64748B]">
                 <div className="w-4 h-4 rounded-full border-2 border-[#E2E8F0] border-t-[#D0423A] animate-spin"></div>
-                Loading map…
+                {t('map.loading')}
               </div>}
         </div>
 
         <div className="absolute top-3 right-3 z-[4] flex flex-col gap-2">
           <div className="mw-ctrl-group">
-            <button type="button" className="mw-ctrl" onClick={() => ready && kept.map.easeTo({ zoom: kept.map.getZoom() + 1, duration: 250 })} aria-label="Zoom in">
+            <button type="button" className="mw-ctrl" onClick={() => ready && kept.map.easeTo({ zoom: kept.map.getZoom() + 1, duration: 250 })} aria-label={t('map.zoomIn')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             </button>
-            <button type="button" className="mw-ctrl" onClick={() => ready && kept.map.easeTo({ zoom: kept.map.getZoom() - 1, duration: 250 })} aria-label="Zoom out">
+            <button type="button" className="mw-ctrl" onClick={() => ready && kept.map.easeTo({ zoom: kept.map.getZoom() - 1, duration: 250 })} aria-label={t('map.zoomOut')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14" /></svg>
             </button>
           </div>
           <div className="mw-ctrl-group">
-            <button type="button" className="mw-ctrl" onClick={() => ready && origin && kept.map.flyTo({ center: [origin.lng, origin.lat], zoom: 14 })} aria-label="Center on my location" title="My location">
+            <button type="button" className="mw-ctrl" onClick={() => ready && origin && kept.map.flyTo({ center: [origin.lng, origin.lat], zoom: 14 })} aria-label={t('map.myLocation')} title={t('map.myLocation')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
             </button>
-            <button type="button" className="mw-ctrl" onClick={() => ready && fitToResults()} aria-label="Show all results" title="Show all results">
+            <button type="button" className="mw-ctrl" onClick={() => ready && fitToResults()} aria-label={t('map.showAll')} title={t('map.showAll')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" /></svg>
             </button>
           </div>
         </div>
 
         <div className="absolute top-3 left-3 z-[4] flex items-center gap-3 bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-full px-3 py-1.5 text-[11px] font-medium text-[#64748B] shadow-[0_2px_10px_rgba(15,23,42,.06)]">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#D0423A]"></span>Open</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#94A3B8]"></span>Closed</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#D0423A]"></span>{t('map.open')}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#94A3B8]"></span>{t('map.closed')}</span>
           {legendKinds.map(k => (
             <span key={k.label} className="hidden sm:flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-[3px] bg-white border-[1.5px]" style={{ borderColor: k.color }}></span>{k.label}</span>
           ))}
@@ -346,18 +357,42 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
 
       <div className="bg-[#F8F2ED] border-t md:border-t-0 md:border-l border-[#E2E8F0] max-h-[70vh] md:max-h-none md:h-full overflow-y-auto">
         <div className="px-4 py-3.5 pb-2.5 bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
-          <div className="font-serif text-[17px] mb-2">Results near you</div>
-          <div className="flex gap-1.5">
-            {SORTS.map(([key, label]) => (
-              <button key={key} type="button" onClick={() => dispatch(setMapSort(key))}
-                className={`${SORT_BTN} ${mapSortBy === key ? 'bg-[#1E293B] border-[#1E293B] text-white' : 'bg-white border-[#E2E8F0] text-[#64748B]'}`}>{label}</button>
-            ))}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="font-serif text-[17px]">{t(filtersOpen ? 'search.filters' : 'search.resultsNearYou')}</div>
+            <button type="button" onClick={onToggleFilters} aria-expanded={filtersOpen} aria-controls="mapFilters"
+              className={`flex items-center gap-1.5 shrink-0 border-[1.5px] bg-white rounded-[9px] px-3 py-[5px] text-[12px] font-medium cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all ${filtersOpen || activeFilters ? 'border-[#D0423A] text-[#D0423A]' : 'border-[#E2E8F0] text-[#1E293B]'}`}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+              {filtersOpen ? t('search.done') : activeFilters ? t('search.filtersCount', { count: activeFilters }) : t('search.filters')}
+            </button>
           </div>
+          {!filtersOpen && (
+            <div className="flex gap-1.5 flex-wrap">
+              {SORTS.map(([key, label]) => (
+                <button key={key} type="button" onClick={() => dispatch(setMapSort(key))}
+                  className={`${SORT_BTN} ${mapSortBy === key ? 'bg-[#1E293B] border-[#1E293B] text-white' : 'bg-white border-[#E2E8F0] text-[#64748B]'}`}>{t(label)}</button>
+              ))}
+              <span className="w-px bg-[#E2E8F0] mx-0.5" aria-hidden="true"></span>
+              {QUICK_FILTERS.map(([key, label]) => (
+                <button key={key} type="button" role="switch" aria-checked={filters[key]} onClick={() => dispatch(toggleOption(key))}
+                  className={`${SORT_BTN} ${filters[key] ? 'border-[#D0423A] bg-[#FDECEA] text-[#D0423A]' : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#D0423A] hover:text-[#D0423A]'}`}>{t(label)}</button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {filtersOpen ? (
+          <div className="p-3">
+            <FilterSidebar open id="mapFilters" onReset={onReset} />
+            <button type="button" onClick={onToggleFilters}
+              className="sticky bottom-3 mt-3 w-full py-3 rounded-xl bg-[#D0423A] hover:bg-[#B8362F] text-white text-[13px] font-semibold border-none cursor-pointer font-sans shadow-[0_6px_18px_rgba(208,66,58,.25)]">
+              {resultCount == null ? t('search.showResults') : resultCount === 1 ? t('search.showOne') : t('search.showCount', { count: resultCount })}
+            </button>
+          </div>
+        ) : (
         <div className="p-3 flex flex-col gap-2.5">
           {/* With a facility chip on, the pane lists the same places as the map, nearest first */}
           {(showDoctorCards ? doctorCards.length : places.length) === 0 && (
-            <div className="p-6 text-center text-[#64748B] text-[13px]">No results match your filters</div>
+            <div className="p-6 text-center text-[#64748B] text-[13px]">{t('results.noneTitle')}</div>
           )}
           {showDoctorCards
             ? doctorCards.map(d => {
@@ -372,10 +407,10 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
                       <div className={`text-[11px] mt-1 ${status.open ? 'text-[#16A34A]' : 'text-[#64748B]'}`}>
                         {status.open ? '●' : '○'} {status.label}
                       </div>
-                      <div className="text-[11px] text-[#94A3B8] mt-[2px]">Next: {status.nextSlot}</div>
+                      <div className="text-[11px] text-[#94A3B8] mt-[2px]">{t('card.next', { slot: status.nextSlot })}</div>
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-[3px] text-[11px] text-[#64748B]"><Stars rating={d.rating} size={12} className="gap-0" /><span className="ml-[3px]">{d.rating}</span></div>
-                        <Link to={`/profile?id=${d.id}`} onClick={e => e.stopPropagation()} className="bg-white text-[#1E293B] border-[1.5px] border-[#E2E8F0] text-[12px] font-medium px-2.5 py-[5px] rounded-[9px] cursor-pointer flex items-center gap-[5px] hover:border-[#D0423A] hover:text-[#D0423A] transition-all font-sans no-underline">View</Link>
+                        <Link to={`/doctor/${d.id}`} onClick={e => e.stopPropagation()} className="bg-white text-[#1E293B] border-[1.5px] border-[#E2E8F0] text-[12px] font-medium px-2.5 py-[5px] rounded-[9px] cursor-pointer flex items-center gap-[5px] hover:border-[#D0423A] hover:text-[#D0423A] transition-all font-sans no-underline">{t('card.view')}</Link>
                       </div>
                     </div>
                   </div>
@@ -397,6 +432,7 @@ export default function MapView({ visible, doctors, places, showDoctorCards }) {
                 );
               })}
         </div>
+        )}
       </div>
     </div>
   );

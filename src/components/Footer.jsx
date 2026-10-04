@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { PinIcon } from './icons';
+import { useT } from '../i18n';
 
 const LINK = 'text-slate-500 text-sm hover:text-slate-900 transition-colors';
 
@@ -9,6 +10,7 @@ export default function Footer({
   inner = 'max-w-7xl mx-auto',
   links = 'flex items-center justify-center flex-wrap gap-x-5 gap-y-2',
 }) {
+  const t = useT();
   return (
     <footer className={`bg-[#F2F1ED] border-t border-slate-200 ${className}`}>
       <div className={`${inner} flex flex-col sm:flex-row items-center justify-between gap-4`}>
@@ -19,13 +21,15 @@ export default function Footer({
           </div>
           <Link to="/" className="font-bold text-base hover:text-[#D6453A] font-custom lg:text-xl">MediWay</Link>
           <span className="hidden sm:block text-slate-300 text-sm">|</span>
-          <span className="hidden sm:block text-slate-500 text-sm">Healthcare discovery for travelers in India</span>
+          <span className="hidden sm:block text-slate-500 text-sm">{t('footer.tagline')}</span>
         </div>
 
         <div className={links}>
-          <a href="#" className={LINK}>Privacy</a>
-          <a href="#" className={LINK}>Terms</a>
-          <a href="mailto:shaurya12joshi@gmail.com" className={LINK}>Contact</a>
+          <Link to="/emergency" className={LINK}>{t('footer.emergency')}</Link>
+          <Link to="/join" className={LINK}>{t('footer.doctors')}</Link>
+          <a href="#" className={LINK}>{t('footer.privacy')}</a>
+          <a href="#" className={LINK}>{t('footer.terms')}</a>
+          <a href="mailto:shaurya12joshi@gmail.com" className={LINK}>{t('footer.contact')}</a>
           <a href="https://www.instagram.com/mediway.in/" target="_blank" rel="noopener noreferrer" aria-label="MediWay on Instagram" title="Instagram" className="text-slate-500 hover:text-slate-900 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: 'block' }}>
               <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />

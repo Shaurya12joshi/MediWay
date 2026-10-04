@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useDispatch } from 'react-redux';
 import { supabase } from '../lib/supabase';
-import { useAddReviewMutation, useGetDoctorQuery } from '../store/api';
+import { skipToken } from '@reduxjs/toolkit/query/react';
+import { useAddReviewMutation, useGetDoctorQuery, useGetPlaceQuery } from '../store/api';
 import { showToast } from '../store/toastSlice';
 import AuthButton from '../components/AuthButton';
 import Footer from '../components/Footer';
@@ -54,7 +55,8 @@ function StarPicker({ value, onChange }) {
   );
 }
 
-function ReviewForm({ doctor }) {
+// subject: { kind: 'doctor' | 'place', id, name }
+function ReviewForm({ subject }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [addReview] = useAddReviewMutation();
@@ -95,7 +97,7 @@ function ReviewForm({ doctor }) {
     let proofPath = null;
     if (proof) {
       const ext = (proof.file.name.split('.').pop() || 'jpg').toLowerCase();
-      proofPath = `${doctor.id}/${crypto.randomUUID()}.${ext}`;
+      proofPath = `${subject.id}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('review-proofs')
         .upload(proofPath, proof.file, { upsert: false });
@@ -109,7 +111,7 @@ function ReviewForm({ doctor }) {
 
     setSubmitting('Submitting…');
     const { error } = await addReview({
-      doctor_id: doctor.id,
+      ...(subject.kind === 'doctor' ? { doctor_id: subject.id } : { place_id: subject.id }),
       author: author.trim() || 'Anonymous',
       rating,
       stood_out: stoodOut,
@@ -129,14 +131,14 @@ function ReviewForm({ doctor }) {
     }
 
     dispatch(showToast(proofPath ? 'Thanks! Your proof is pending review.' : 'Thanks for your review!'));
-    setTimeout(() => navigate(`/profile?id=${doctor.id}`), 800);
+    setTimeout(() => navigate(subject.kind === 'doctor' ? `/doctor/${subject.id}` : '/search'), 800);
   }
 
   return (
     <>
       <div className="mb-[24px]">
         <h1 className="font-serif text-[22px] sm:text-[26px] text-text leading-[1.15]">Rate your visit</h1>
-        <p className="text-[13px] text-faint mt-[4px]">with <strong className="text-text">{doctor.name}</strong> · takes about 20 seconds</p>
+        <p className="text-[13px] text-faint mt-[4px]">with <strong className="text-text">{subject.name}</strong> · takes about 20 seconds</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-border rounded-[18px] p-[18px] sm:p-[26px] flex flex-col gap-[22px] sm:gap-[26px]">
@@ -160,7 +162,7 @@ function ReviewForm({ doctor }) {
         </div>
 
         <div>
-          <label className={`${LABEL} mb-[12px]`}>Would you recommend this doctor?</label>
+          <label className={`${LABEL} mb-[12px]`}>{subject.kind === 'doctor' ? 'Would you recommend this doctor?' : 'Would you recommend this place?'}</label>
           <div className="grid grid-cols-2 gap-[10px]">
             <button type="button" aria-pressed={recommend === true} onClick={() => { setRecommend(true); setErrors(x => ({ ...x, recommend: false })); }}
               className={`${REC} ${recommend === true ? 'border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]' : 'border-border bg-white text-muted'}`}>
@@ -212,13 +214,17 @@ export default function Review() {
   useTitle('MediWay — Write a Review');
   const [params] = useSearchParams();
   const id = params.get('id');
-  const doctor = useGetDoctorQuery(id, { skip: !id });
+  const placeId = params.get('place');
+  const doctor = useGetDoctorQuery(id ?? skipToken);
+  const place = useGetPlaceQuery(!id && placeId ? placeId : skipToken);
+  const subject = doctor.data ? { kind: 'doctor', id: doctor.data.id, name: doctor.data.name }
+    : place.data ? { kind: 'place', id: place.data.id, name: place.data.name } : null;
 
   let content;
-  if (!id) content = <NotFoundMessage title="No doctor specified" />;
-  else if (doctor.isLoading) content = <Spinner label="Loading…" />;
-  else if (!doctor.data) content = <NotFoundMessage title="Doctor not found" />;
-  else content = <ReviewForm doctor={doctor.data} />;
+  if (!id && !placeId) content = <NotFoundMessage title="Nothing to review" />;
+  else if (doctor.isLoading || place.isLoading) content = <Spinner label="Loading…" />;
+  else if (!subject) content = <NotFoundMessage title={id ? 'Doctor not found' : 'Place not found'} />;
+  else content = <ReviewForm subject={subject} />;
 
   return (
     <div className="font-sans min-h-screen flex flex-col">
@@ -231,9 +237,9 @@ export default function Review() {
             <span className="font-custom text-[22px] sm:text-[29px] font-bold hover:text-[#D6453A] text-text">MediWay</span>
           </Link>
           <div style={{ flex: 1 }}></div>
-          <Link to={doctor.data ? `/profile?id=${doctor.data.id}` : '/search'} title="Back to profile" className="flex items-center gap-[5px] text-[13px] text-faint no-underline hover:text-text shrink-0">
+          <Link to={subject?.kind === 'doctor' ? `/doctor/${subject.id}` : '/search'} title="Back" className="flex items-center gap-[5px] text-[13px] text-faint no-underline hover:text-text shrink-0">
             <BackIcon />
-            <span className="hidden sm:inline">Back to profile</span>
+            <span className="hidden sm:inline">{subject?.kind === 'doctor' ? 'Back to profile' : 'Back to results'}</span>
           </Link>
           <AuthButton />
         </div>

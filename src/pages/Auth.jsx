@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { supabase, authLinkType } from '../lib/supabase';
 import { PinIcon } from '../components/icons';
 import { useTitle } from '../components/ui';
+import { useSiteStats } from '../store/siteStats';
 
 const INPUT = 'w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D0423A] focus:ring-2 focus:ring-[#D0423A]/10 transition-all';
 const LABEL = 'text-xs font-semibold text-slate-600 mb-1.5 block';
@@ -216,6 +217,7 @@ export default function Auth() {
   const [params] = useSearchParams();
   const [tab, setTab] = useState(params.get('tab') === 'signup' ? 'signup' : 'login');
   const [inviteEmail, setInviteEmail] = useState(null);
+  const stats = useSiteStats();
 
   // Arriving from an invite email: set up the account. Already signed in: nothing to do here.
   useEffect(() => {
@@ -258,18 +260,13 @@ export default function Auth() {
     
                 <div className="relative z-10 flex items-center gap-8 pt-8 border-t border-white/10">
                     <div>
-                        <p className="font-custom font-bold text-2xl text-white">2,400+</p>
-                        <p className="text-slate-600 font-semibold text-xs mt-0.5">Verified providers</p>
+                        <p className="font-custom font-bold text-2xl text-white">{stats.placesListed}</p>
+                        <p className="text-slate-600 font-semibold text-xs mt-0.5">Places listed</p>
                     </div>
                     <div className="w-px h-8 bg-white/10"></div>
                     <div>
-                        <p className="font-custom font-bold text-2xl text-white">180+</p>
-                        <p className="text-slate-600 font-semibold text-xs mt-0.5">Cities covered</p>
-                    </div>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <div>
-                        <p className="font-custom font-bold text-2xl text-white">1,284</p>
-                        <p className="text-slate-600 font-semibold   text-xs mt-0.5">On the waitlist</p>
+                        <p className="font-custom font-bold text-2xl text-white">{stats.citiesLive}</p>
+                        <p className="text-slate-600 font-semibold text-xs mt-0.5">{stats.citiesLive === '1' ? 'City live' : 'Cities live'} · more coming soon</p>
                     </div>
                 </div>
             </div>

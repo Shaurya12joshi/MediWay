@@ -20,11 +20,14 @@ export function distanceKm(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+const TRAVEL_MODE = { drive: 'driving', walk: 'walking', transit: 'transit' };
+
 // Only pass an origin we actually know: without one, Google Maps starts from the device's
-// own location, which beats routing from a city centre.
-export function directionsUrl(dest, origin) {
+// own location, which beats routing from a city centre. `mode` (drive/walk/transit) opens that tab.
+export function directionsUrl(dest, origin, mode) {
   const from = origin?.fromDevice ? `&origin=${origin.lat},${origin.lng}` : '';
-  return `https://www.google.com/maps/dir/?api=1${from}&destination=${encodeURIComponent(dest)}`;
+  const travel = TRAVEL_MODE[mode] ? `&travelmode=${TRAVEL_MODE[mode]}` : '';
+  return `https://www.google.com/maps/dir/?api=1${from}&destination=${encodeURIComponent(dest)}${travel}`;
 }
 
 export function cityCentre(city) {

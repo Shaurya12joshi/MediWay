@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Import hospitals, clinics, pharmacies and labs for one city into `places_staging`.
-// Nothing goes live until an admin approves it in admin.html → Imported places.
+// Nothing goes live until an admin approves it in Admin → Imported places.
 //
 //   node scripts/import-places.mjs --city varanasi          writes supabase/imports/varanasi-<date>.sql
 //                                                           (paste it into Supabase → SQL Editor)
@@ -9,6 +9,9 @@
 //   --overture-file <path>        reuse an earlier Overture download (.geojsonseq) instead of fetching again
 //
 // The city must already exist in the `cities` table (add it with launched = false while you import).
+// Covers the city's circle (center + radius_km) and its tourist areas (cities.areas), even ones outside
+// the circle, like a beach strip or a temple town nearby. Big circles are fetched in tiles, so dense
+// cities don't time out the Overpass servers.
 // Sources: OpenStreetMap (always) and Overture Maps (when the `overturemaps` CLI is installed:
 // `pip install overturemaps`). OSM data is © OpenStreetMap contributors (ODbL); Overture places are CDLA-2.0.
 
@@ -18,6 +21,8 @@ import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseOsmHours } from './lib/opening-hours.mjs'
+import { asciiJson } from './lib/ascii-json.mjs'
+import { addCitySql, distanceKm } from './lib/city.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const USER_AGENT = 'MediWay-importer/1.0 (+https://github.com/Shaurya12joshi/MEDROUTE)'
@@ -60,21 +65,23 @@ function fail(msg) { console.error(`✗ ${msg}`); process.exit(1) }
 
 async function main() {
   const city = await fetchCity(slug)
-  const radiusM = Math.round(city.radius_km * 1000)
-  console.log(`→ ${city.name}: ${city.radius_km} km around ${city.center_lat}, ${city.center_lng}`)
+  const area = coverageOf(city)
+  const outside = area.extra.length ? ` + ${area.extra.length} tourist area${area.extra.length > 1 ? 's' : ''} outside it (${area.extra.map(a => a.name).join(', ')})` : ''
+  console.log(`→ ${city.name}: ${city.radius_km} km around ${city.center_lat}, ${city.center_lng}${outside}`)
+  if (!area.areas.length) console.log('  (No tourist areas in cities.areas yet: add them so launch-city.mjs can check coverage where tourists are.)')
 
-  const osm = await fetchOsm(city.center_lat, city.center_lng, radiusM)
+  const osm = await fetchOsm(area)
   console.log(`  OpenStreetMap: ${osm.length} named places`)
 
   let overture = []
   if (flag('no-overture')) console.log('  Overture: skipped (--no-overture)')
   else if (option('overture-file')) {
-    overture = readOverture(option('overture-file'), city, radiusM)
+    overture = readOverture(option('overture-file'), area)
     console.log(`  Overture: ${overture.length} places (from ${option('overture-file')})`)
   }
   else if (!hasOvertureCli()) console.log('  Overture: skipped — `pip install overturemaps` to add it (much better pharmacy coverage)')
   else {
-    overture = fetchOverture(city, radiusM)
+    overture = fetchOverture(area)
     console.log(`  Overture: ${overture.length} places`)
   }
 
@@ -90,7 +97,7 @@ async function main() {
     console.log(`✓ Staged: ${JSON.stringify(result)}`)
   } else {
     const files = writeSqlFile(places, city)
-    console.log(`✓ Wrote ${files.join('\n        ')}\n  Run ${files.length > 1 ? 'each file' : 'it'} in Supabase → SQL Editor, then review in admin.html → Imported places.`)
+    console.log(`✓ Wrote ${files.join('\n        ')}\n  Run ${files.length > 1 ? 'each file' : 'it'} in Supabase → SQL Editor, then review in Admin → Imported places.`)
   }
 }
 
@@ -103,11 +110,47 @@ async function fetchCity(slug) {
   if (!res.ok) fail(`Couldn't read the cities table (${res.status}). Has 20260930_multi_city.sql been run?`)
   const [row] = await res.json()
   if (!row) {
-    fail(`No city "${slug}" in the cities table. Add it first, e.g.:\n` +
-      `  insert into cities (slug, name, state, center_lat, center_lng, radius_km, launched)\n` +
-      `  values ('${slug}', '<Name>', '<State>', <lat>, <lng>, 25, false);`)
+    fail(`No city "${slug}" in the cities table. Add it first (tourist areas are optional but recommended), e.g.:\n${addCitySql(slug)}`)
   }
   return row
+}
+
+// ---------- Which ground to cover ----------
+
+const TILE_KM = 30       // side of one Overpass bounding box: Varanasi's 30 km circle is 4 tiles
+const AREA_RADIUS_KM = 3 // around a tourist area outside the city's circle
+
+// The city's circle, plus any tourist area that pokes out of it
+function coverageOf(city) {
+  const center = { lat: city.center_lat, lng: city.center_lng }
+  const areas = (Array.isArray(city.areas) ? city.areas : []).filter(a => Number.isFinite(a.lat) && Number.isFinite(a.lng))
+  const extra = areas.filter(a => distanceKm(a.lat, a.lng, center.lat, center.lng) > city.radius_km - AREA_RADIUS_KM)
+  const circles = [{ ...center, km: city.radius_km }, ...extra.map(a => ({ lat: a.lat, lng: a.lng, km: AREA_RADIUS_KM }))]
+  return {
+    areas, extra, circles,
+    contains: (lat, lng) => circles.some(c => distanceKm(lat, lng, c.lat, c.lng) <= c.km),
+  }
+}
+
+// [south, west, north, east] around a circle
+function boxOf({ lat, lng, km }) {
+  const dLat = km / 111.32
+  const dLng = km / (111.32 * Math.cos(lat * Math.PI / 180))
+  return [lat - dLat, lng - dLng, lat + dLat, lng + dLng]
+}
+
+// Each circle's box, cut into tiles no wider than TILE_KM (a bounding box is far cheaper for Overpass
+// than one big `around`); places outside the circles are dropped afterwards
+function tilesOf(area) {
+  const tiles = []
+  for (const circle of area.circles) {
+    const [s, w, n, e] = boxOf(circle)
+    const rows = Math.max(1, Math.ceil((2 * circle.km) / TILE_KM))
+    for (let i = 0; i < rows; i++) for (let j = 0; j < rows; j++) {
+      tiles.push([s + (n - s) * i / rows, w + (e - w) * j / rows, s + (n - s) * (i + 1) / rows, w + (e - w) * (j + 1) / rows])
+    }
+  }
+  return tiles
 }
 
 async function pushToSupabase(places) {
@@ -137,13 +180,13 @@ function writeSqlFile(places, city) {
   const parts = Math.ceil(places.length / 400) || 1
   const files = []
   for (let i = 0; i < parts; i++) {
-    const json = JSON.stringify(places.slice(i * 400, (i + 1) * 400))
+    const json = asciiJson(places.slice(i * 400, (i + 1) * 400))
     if (json.includes('$mediway_import$')) fail('Place data contains the SQL quote tag; aborting.')
     const file = join(dir, parts > 1 ? `${base}.part${i + 1}-of-${parts}.sql` : `${base}.sql`)
     writeFileSync(file,
-      `-- ${city.name}: places ${i * 400 + 1}–${Math.min((i + 1) * 400, places.length)} of ${places.length}, ` +
+      `-- ${city.name}: places ${i * 400 + 1}-${Math.min((i + 1) * 400, places.length)} of ${places.length}, ` +
       `generated by scripts/import-places.mjs on ${new Date().toISOString()}\n` +
-      `-- Stages them for review; nothing is published until approved in admin.html.\n` +
+      `-- Stages them for review; nothing is published until approved in Admin → Imported places.\n` +
       `select public.stage_places($mediway_import$${json}$mediway_import$::jsonb);\n`)
     files.push(file.replace(ROOT + '/', ''))
   }
@@ -152,22 +195,33 @@ function writeSqlFile(places, city) {
 
 // ---------- OpenStreetMap ----------
 
-async function fetchOsm(lat, lng, radiusM) {
-  const around = `(around:${radiusM},${lat},${lng})`
-  const query = `[out:json][timeout:180];
-    (
-      nwr["amenity"~"^(hospital|clinic|doctors|dentist|pharmacy)$"]["name"]${around};
-      nwr["healthcare"~"^(hospital|clinic|doctor|dentist|pharmacy|laboratory|centre)$"]["name"]${around};
-      nwr["shop"="chemist"]["name"]${around};
-    );
-    out center tags;`
-  const json = await overpass(query)
-  return json.elements.map(osmToPlace).filter(Boolean)
+async function fetchOsm(area) {
+  const tiles = tilesOf(area)
+  const elements = new Map() // type/id → element: neighbouring tiles share edges
+  for (const [i, tile] of tiles.entries()) {
+    const bbox = `(${tile.map(n => n.toFixed(5)).join(',')})`
+    const query = `[out:json][timeout:180];
+      (
+        nwr["amenity"~"^(hospital|clinic|doctors|dentist|pharmacy)$"]["name"]${bbox};
+        nwr["healthcare"~"^(hospital|clinic|doctor|dentist|pharmacy|laboratory|centre)$"]["name"]${bbox};
+        nwr["shop"="chemist"]["name"]${bbox};
+      );
+      out center tags;`
+    const json = await overpass(query)
+    for (const el of json.elements) elements.set(`${el.type}/${el.id}`, el)
+    if (tiles.length > 1) console.log(`  … OpenStreetMap tile ${i + 1}/${tiles.length}: ${elements.size} so far`)
+    if (i < tiles.length - 1) await new Promise(r => setTimeout(r, 2000)) // shared public servers: be gentle
+  }
+  return [...elements.values()].map(osmToPlace).filter(p => p && area.contains(p.lat, p.lng))
 }
 
-// Public Overpass servers are often busy: try each mirror, twice, before giving up
+// Public Overpass servers are often busy (504): try each mirror, three rounds, waiting longer each time
 async function overpass(query) {
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) {
+      console.log(`  (every mirror busy; waiting ${30 * attempt}s before trying again)`)
+      await new Promise(r => setTimeout(r, 30_000 * attempt))
+    }
     for (const url of OVERPASS_MIRRORS) {
       try {
         const res = await fetch(url, {
@@ -182,9 +236,8 @@ async function overpass(query) {
         console.log(`  (${new URL(url).host} failed: ${err.message}, trying the next mirror)`)
       }
     }
-    await new Promise(r => setTimeout(r, 10_000))
   }
-  fail('Every Overpass mirror failed. Try again in a few minutes.')
+  fail('Every Overpass mirror stayed busy. Nothing was written; try again in a few minutes.')
 }
 
 function osmKind(t) {
@@ -234,11 +287,10 @@ function hasOvertureCli() {
   try { execFileSync('overturemaps', ['--help'], { stdio: 'ignore' }); return true } catch { return false }
 }
 
-function fetchOverture(city, radiusM) {
-  // bbox around the circle; points outside the radius are dropped below
-  const dLat = radiusM / 111_320
-  const dLng = radiusM / (111_320 * Math.cos(city.center_lat * Math.PI / 180))
-  const bbox = [city.center_lng - dLng, city.center_lat - dLat, city.center_lng + dLng, city.center_lat + dLat]
+function fetchOverture(area) {
+  // One box around every circle; points outside the circles are dropped below
+  const boxes = area.circles.map(boxOf)
+  const bbox = [Math.min(...boxes.map(b => b[1])), Math.min(...boxes.map(b => b[0])), Math.max(...boxes.map(b => b[3])), Math.max(...boxes.map(b => b[2]))]
     .map(n => n.toFixed(5)).join(',')
   const out = join(tmpdir(), `mediway-overture-${slug}-${Date.now()}.geojsonseq`)
   console.log('  Overture: downloading (can take a few minutes)…')
@@ -249,16 +301,16 @@ function fetchOverture(city, radiusM) {
       `  (CERTIFICATE_VERIFY_FAILED above? Run "Install Certificates.command" in your /Applications/Python 3.x folder once.)`)
     return []
   }
-  const places = readOverture(out, city, radiusM)
+  const places = readOverture(out, area)
   rmSync(out, { force: true })
   rmSync(`${out}.state`, { force: true })
   return places
 }
 
-function readOverture(file, city, radiusM) {
+function readOverture(file, area) {
   return readFileSync(file, 'utf8').split('\n').filter(Boolean)
     .map(line => overtureToPlace(JSON.parse(line)))
-    .filter(p => p && distanceM(p.lat, p.lng, city.center_lat, city.center_lng) <= radiusM)
+    .filter(p => p && area.contains(p.lat, p.lng))
 }
 
 // Overture files each place under a `basic_category` (plus a finer `taxonomy.primary`).
@@ -344,7 +396,8 @@ function mergeDuplicates(places) {
 }
 
 // Sources disagree on position by up to a few hundred metres, so the closer the names, the further apart
-// two records may be. Tuned on Varanasi: OSM vs Overture put the same hospital 150–250 m apart.
+// two records may be. OSM and Overture typically put the same hospital 150–250 m apart; the 300 m ceiling
+// holds in dense old towns too, where different places sit closer than that but have different names.
 function isSamePlace(nameSim, metres) {
   return (nameSim >= 0.9 && metres <= 300) ||
          (nameSim >= 0.5 && metres <= 150) ||

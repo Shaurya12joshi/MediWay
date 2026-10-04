@@ -1,79 +1,21 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { useSiteStats } from '../store/siteStats';
 import AuthButton from '../components/AuthButton';
+import EmergencyCard from '../components/EmergencyCard';
+import LanguagePicker from '../components/LanguagePicker';
 import Footer from '../components/Footer';
 import { PinIcon } from '../components/icons';
 import { useTitle } from '../components/ui';
 import heroMap from '../assets/hero-map.webp';
 
-const TESTIMONIALS = [
-  { initials: 'AK', bg: 'bg-blue-100', color: 'text-blue-900', quote: 'Found an English-speaking doctor in Jaipur within 2 minutes. Absolute lifesaver during my solo trip.', name: 'Anika K.', loc: 'Tourist from Germany' },
-  { initials: 'RS', bg: 'bg-green-100', color: 'text-green-900', quote: 'Was in Hyderabad for work, fell sick at midnight. MediWay showed me a 24/7 clinic 0.3 km away.', name: 'Rahul S.', loc: 'Business traveler, Delhi' },
-  { initials: 'MJ', bg: 'bg-amber-100', color: 'text-amber-900', quote: 'As a foreign student in Pune, I had no idea where to go. This made healthcare feel less scary.', name: 'Marco J.', loc: 'Student from Italy' },
-  { initials: 'PL', bg: 'bg-red-100', color: 'text-red-900', quote: "Emergency mode found the nearest ER in seconds. I didn't have to think — just followed directions.", name: 'Preethi L.', loc: 'Domestic traveler, Kerala' },
-];
-
 const NAV_LINKS = [['#features', 'Features'], ['#how-it-works', 'How it Works'], ['#emergency', 'Emergency']];
-
-function useClock() {
-  const now = () => new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  const [clock, setClock] = useState(now);
-  useEffect(() => {
-    const timer = setInterval(() => setClock(now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  return clock;
-}
-
-// Tablet-width testimonial card: advances every 3.5s, and a dot click restarts the wait
-function Testimonials() {
-  const [current, setCurrent] = useState(0);
-  useEffect(() => {
-    const timer = setTimeout(() => setCurrent(i => (i + 1) % TESTIMONIALS.length), 3500);
-    return () => clearTimeout(timer);
-  }, [current]);
-  const t = TESTIMONIALS[current];
-
-  return (
-    <div className="hidden md:block lg:hidden w-full mx-auto max-w-6xl mt-8">
-      <div className="bg-white border border-slate-200 rounded-2xl px-4 py-5 sm:px-6 w-full">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${t.bg} ${t.color}`}>{t.initials}</div>
-            <div>
-              <span className="text-sm font-semibold text-slate-800 block">{t.name}</span>
-              <span className="text-xs text-slate-400">· {t.loc}</span>
-            </div>
-          </div>
-          <span className="text-amber-500 text-base">★★★★★</span>
-        </div>
-        <div className="text-6xl sm:text-7xl md:text-8xl text-slate-200 font-serif leading-none">"</div>
-        <p className="text-lg sm:text-2xl md:text-[30px] text-slate-700 leading-relaxed">{t.quote}</p>
-      </div>
-      <div className="flex gap-1.5 mt-2.5 pl-1">
-        {TESTIMONIALS.map((_, i) => (
-          <button key={i} type="button" aria-label={`Show testimonial ${i + 1}`} onClick={() => setCurrent(i)}
-            className={`h-1.5 rounded-full transition-all duration-200 ${i === current ? 'w-4 bg-[#D0423A]' : 'w-1.5 bg-slate-300'}`} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function Home() {
   useTitle('MediWay');
   const navigate = useNavigate();
-  const clock = useClock();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sosSent, setSosSent] = useState(false);
-
-  // Demo only: show the "sent" state for 3 seconds
-  const sosActivate = () => setSosSent(true);
-  useEffect(() => {
-    if (!sosSent) return;
-    const timer = setTimeout(() => setSosSent(false), 3000);
-    return () => clearTimeout(timer);
-  }, [sosSent]);
+  const { placesListed, citiesLive, liveIn } = useSiteStats();
 
   // Section links (#features…) glide on this page; route changes elsewhere should jump.
   // A layout effect, so the class is gone before the next page restores its scroll position.
@@ -98,6 +40,7 @@ export default function Home() {
                     {NAV_LINKS.map(([href, label]) => <a key={href} href={href} className="hover:text-[#D6453A]">{label}</a>)}
                 </div>
                 <div className="flex items-center gap-3">
+                    <LanguagePicker className="hidden sm:flex" />
                     <AuthButton className="text-slate-600 hover:text-[#D6453A] text-sm font-semibold" />
                     <Link to="/search" className="bg-[#D6453A] px-3 py-1.5 rounded-3xl text-slate-50 cursor-pointer hover:bg-[#c2483f] font-semibold hidden md:block">
                         Find Care Now
@@ -118,6 +61,7 @@ export default function Home() {
                 {NAV_LINKS.map(([href, label]) => (
                     <a key={href} href={href} onClick={() => setMenuOpen(false)} className="text-3xl font-semibold hover:text-[#D6453A] transition">{label}</a>
                 ))}
+                <LanguagePicker className="text-lg" />
                 <Link to="/search" className="bg-[#D6453A] text-white p-3 text-center rounded-3xl mt-6 font-semibold text-xl hover:bg-[#c2483f] transition">
                     Find Care Now
                 </Link>
@@ -131,7 +75,7 @@ export default function Home() {
     <div id="headerText" className="mx-4 sm:mx-6 md:mx-0 mt-10 max-w-max">
         <div className="bg-white rounded-3xl flex items-center gap-3 border border-black/5 py-3 px-4 shadow-sm">
             <div className="w-3 h-3 rounded-full bg-emerald-600 flex-shrink-0"></div>
-            <p className="text-sm text-[#3F3F46]">Available across India - Bengaluru, Mumbai, Delhi & more</p>
+            <p className="text-sm text-[#3F3F46]">{liveIn} · more cities coming soon</p>
         </div>
     </div>
 
@@ -150,65 +94,18 @@ export default function Home() {
                     <h1>you travel</h1>
                 </div>
                 <div className="font-sans text-sm text-stone-500 lg:text-xl xl:text-2xl 2xl:text-3xl lg:max-w-screen-md mt-1">
-                    <p>Find verified doctors, hospitals, and pharmacies near you in seconds. Built for travelers, tourists, and anyone far from home.</p>
+                    <p>Find doctors, hospitals, and pharmacies near you in seconds, with opening hours and 24/7 emergency rooms. Built for travelers, tourists, and anyone far from home.</p>
                 </div>
             </div>
             <div className="flex flex-col p-5 md:px-0 lg:pt-6 lg:pb-0 gap-3">
-
-                <div className="hidden">
-                    <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold z-[5]">AK</div>
-                        <div className="w-8 h-8 rounded-full bg-green-100 text-green-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[4]">SR</div>
-                        <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[3]">MJ</div>
-                        <div className="w-8 h-8 rounded-full bg-red-100 text-red-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[2]">PL</div>
-                        <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 border-2 border-white flex items-center justify-center text-[10px] font-semibold -ml-2.5 z-[1]">+9k</div>
-                    </div>
-                    <div className="w-px h-5 bg-black/10"></div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-amber-500 text-[13px]">★★★★★</span>
-                        <span className="text-[13px] font-semibold text-gray-900">1,000+</span>
-                        <span className="text-[13px] text-gray-500">travelers helped</span>
-                    </div>
-                </div>
 
                 <div className="flex flex-row items-center gap-3 flex-wrap">
                     <button onClick={() => navigate('/search')} className="bg-[#BE332B] font-bold w-[220px] p-3 rounded-full text-slate-50 hover:bg-red-700 hover:-translate-y-1 transition-all duration-300 shadow-md shadow-red-800">
                         Find Doctor Near Me
                     </button>
-                    <a className="border-[#E6E6E1] border-2 px-6 py-3 rounded-3xl hover:bg-white hover:border-black transition-all duration-200">
+                    <a href="#how-it-works" className="border-[#E6E6E1] border-2 px-6 py-3 rounded-3xl hover:bg-white hover:border-black transition-all duration-200">
                         Learn More
                     </a>
-                    <div className="hidden lg:inline-flex items-center gap-x-3 gap-y-1 flex-wrap bg-white border border-black/8 rounded-full px-2 py-2 max-w-full">
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold z-[5]">AK</div>
-                            <div className="w-8 h-8 rounded-full bg-green-100 text-green-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[4]">SR</div>
-                            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[3]">MJ</div>
-                            <div className="w-8 h-8 rounded-full bg-red-100 text-red-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[2]">PL</div>
-                            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 border-2 border-white flex items-center justify-center text-[10px] font-semibold -ml-2.5 z-[1]">+9k</div>
-                        </div>
-                        <div className="w-px h-5 bg-black/10"></div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-amber-500 text-[13px]">★★★★★</span>
-                            <span className="text-[13px] font-semibold text-gray-900">1,000+</span>
-                            <span className="text-[13px] text-gray-500">travelers helped</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-white border border-black/8 rounded-[20px] px-2 py-2 md:hidden max-w-full w-fit">
-                    <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold z-[5]">AK</div>
-                        <div className="w-8 h-8 rounded-full bg-green-100 text-green-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[4]">SR</div>
-                        <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[3]">MJ</div>
-                        <div className="w-8 h-8 rounded-full bg-red-100 text-red-800 border-2 border-white flex items-center justify-center text-[11px] font-semibold -ml-2.5 z-[2]">PL</div>
-                        <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 border-2 border-white flex items-center justify-center text-[10px] font-semibold -ml-2.5 z-[1]">+9k</div>
-                    </div>
-                    <div className="w-px h-5 bg-black/10 max-[374px]:hidden"></div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-amber-500 text-[13px]">★★★★★</span>
-                        <span className="text-[13px] font-semibold text-gray-900">1,000+</span>
-                        <span className="text-[13px] text-gray-500">travelers helped</span>
-                    </div>
                 </div>
 
                 
@@ -229,6 +126,8 @@ export default function Home() {
                 <img src={heroMap} width="450" height="320" loading="lazy" decoding="async"
                     alt="Street map of Lanka, Varanasi with a route to the nearest hospital"
                     className="absolute inset-0 w-full h-full object-cover select-none" />
+                {/* Illustration of the search, not live data */}
+                <span className="absolute top-2 left-2 z-10 text-[10px] font-semibold uppercase tracking-[.08em] text-slate-600 bg-white/90 rounded-full px-2 py-1 shadow-sm">Example</span>
 
                 <div className="absolute left-[20%] top-[30%] -translate-x-1/2 -translate-y-full">
                     <div className="mw-pin"><span>PS</span></div>
@@ -309,23 +208,23 @@ export default function Home() {
         </div>
         <div className="flex items-center justify-between w-full pt-2">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 py-3 sm:px-6 md:px-12 md:py-4 lg:px-16 flex-1 justify-center text-center sm:text-left">
-                <h1 className="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">2,400+</h1>
+                <h1 className="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">{placesListed}</h1>
                 <div className="text-xs md:text-sm lg:text-lg text-slate-500 leading-tight">
-                    <p>Verified</p><p>providers</p>
+                    <p>Places</p><p>listed</p>
                 </div>
             </div>
             <div className="self-stretch w-px bg-slate-300 my-3"></div>
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 py-3 sm:px-6 md:px-12 md:py-4 lg:px-16 flex-1 justify-center text-center sm:text-left">
-                <h1 className="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">180+</h1>
+                <h1 className="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">{citiesLive}</h1>
                 <div className="text-xs md:text-sm lg:text-lg text-slate-500 leading-tight">
-                    <p>Cities</p><p>covered</p>
+                    <p>{citiesLive === '1' ? 'City live' : 'Cities live'}</p><p>more soon</p>
                 </div>
             </div>
             <div className="self-stretch w-px bg-slate-300 my-3"></div>
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-2 py-3 sm:px-6 md:px-12 md:py-4 lg:px-16 flex-1 justify-center text-center sm:text-left">
-                <h1 className="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">24/7</h1>
+                <h1 className="font-custom font-bold text-xl md:text-2xl lg:text-4xl text-slate-900">112</h1>
                 <div className="text-xs md:text-sm lg:text-lg text-slate-500 leading-tight">
-                    <p>Emergency</p><p>support</p>
+                    <p>One-tap</p><p>emergency call</p>
                 </div>
             </div>
         </div>
@@ -341,86 +240,7 @@ export default function Home() {
 
 <div className="mx-auto max-w-6xl flex flex-col gap-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-20">
 
-        <div className="w-full max-w-sm xl:max-w-md mx-auto lg:mx-0 lg:justify-self-end rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white">
-
-            <div className="bg-red-700 px-5 py-4">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 bg-white/15 rounded-full px-3 py-1">
-                <span className="w-2 h-2 rounded-full bg-red-300 animate-pulse"></span>
-                <span className="text-white text-xs font-semibold tracking-widest uppercase">Emergency Mode</span>
-                </div>
-                <span className="text-white/60 text-xs">{clock}</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <div className="relative flex items-center justify-center w-16 h-16 shrink-0">
-                <span className="absolute inline-flex w-full h-full rounded-full bg-white/20 animate-ping"></span>
-                <button onClick={sosActivate} aria-label="Send SOS" className="relative w-14 h-14 rounded-full bg-white flex flex-col items-center justify-center cursor-pointer shadow-lg hover:scale-105 transition-transform duration-150">
-                    <span className="text-red-700 text-xs font-black tracking-widest">SOS</span>
-                </button>
-                </div>
-                <div>
-                <p className="text-white font-semibold text-sm">Tap SOS to alert</p>
-                <p className="text-white/60 text-xs mt-0.5">Shares location with nearest ER</p>
-                </div>
-            </div>
-            </div>
-
-            <div className={`flex items-center gap-2 px-5 py-2 border-b ${sosSent ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-            <span className={`w-2 h-2 rounded-full animate-pulse shrink-0 ${sosSent ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            <span className={`text-xs ${sosSent ? 'text-green-800' : 'text-red-800'}`}>{sosSent ? 'SOS sent! Emergency contact notified.' : 'Locating nearest emergency services…'}</span>
-            </div>
-
-            <div className="flex flex-col gap-2 px-4 py-3">
-
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center shrink-0 text-lg">🏥</div>
-                <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800">Apollo Hospital — ER</p>
-                <p className="text-xs text-slate-500">Emergency room · Open 24/7</p>
-                </div>
-                <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-slate-700">0.8 km</p>
-                <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">Open</span>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 text-lg">🚑</div>
-                <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800">ZIQITZA Ambulance</p>
-                <p className="text-xs text-slate-500">Avg. arrival · 8 min</p>
-                </div>
-                <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-slate-700">1808</p>
-                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">Tap to call</span>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 cursor-pointer hover:border-slate-300 transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 text-lg">💊</div>
-                <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800">MedPlus Pharmacy</p>
-                <p className="text-xs text-slate-500">24/7 · All medications</p>
-                </div>
-                <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-slate-700">0.2 km</p>
-                <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">Open</span>
-                </div>
-            </div>
-
-            </div>
-
-            <div className="flex gap-2 px-4 pb-4">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition-colors">
-                 How it works
-            </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-700 text-white text-xs font-semibold hover:bg-red-800 transition-colors">
-                Get Directions
-            </button>
-            </div>
-
-        </div>
+        <EmergencyCard showPageLink className="max-w-sm xl:max-w-md mx-auto lg:mx-0 lg:justify-self-end" />
 
         <div id="how-it-works" className="scroll-mt-20 flex flex-col justify-center gap-6 w-full max-w-sm xl:max-w-md mx-auto lg:mx-0 lg:justify-self-start min-w-0">
 
@@ -430,7 +250,7 @@ export default function Home() {
                 Healthcare found in<br className="hidden lg:block" /> three simple steps
             </h2>
             <p className="text-slate-500 text-sm mt-2 max-w-sm">
-                No app download needed. Works in any browser, anywhere in India.
+                No app download needed. Works in any browser. {liveIn}, with more cities coming soon.
             </p>
             </div>
 
@@ -442,7 +262,7 @@ export default function Home() {
                 </div>
                 <div>
                 <p className="font-semibold text-slate-800 text-sm">Share your location</p>
-                <p className="text-slate-500 text-xs mt-0.5 max-w-xs">Allow location access or type any city in India. No account needed.</p>
+                <p className="text-slate-500 text-xs mt-0.5 max-w-xs">Allow location access, or browse a city where MediWay is live. No account needed.</p>
                 </div>
             </div>
 
@@ -454,7 +274,7 @@ export default function Home() {
                 </div>
                 <div>
                 <p className="font-semibold text-slate-800 text-sm">Filter your need</p>
-                <p className="text-slate-500 text-xs mt-0.5 max-w-xs">Pick specialty, language, distance, or activate Emergency Mode for urgent care.</p>
+                <p className="text-slate-500 text-xs mt-0.5 max-w-xs">Pick specialty, language and distance, or show only hospitals with a 24/7 emergency room.</p>
                 </div>
             </div>
 
@@ -466,7 +286,7 @@ export default function Home() {
                 </div>
                 <div>
                 <p className="font-semibold text-slate-800 text-sm">Get there instantly</p>
-                <p className="text-slate-500 text-xs mt-0.5 max-w-xs">View the doctor's full profile, call directly, or open directions — all in one tap.</p>
+                <p className="text-slate-500 text-xs mt-0.5 max-w-xs">See opening hours and ratings, call the clinic, or open directions in Google Maps.</p>
                 </div>
             </div>
 
@@ -482,7 +302,6 @@ export default function Home() {
 
 </div>
 
-        <Testimonials />
 
 
 
@@ -577,12 +396,12 @@ export default function Home() {
       </div>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Location-Aware Search</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Automatically detects your location and surfaces the closest verified providers ranked by relevance and distance.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Uses your location, or the city centre, to show the closest hospitals, clinics, pharmacies and labs, nearest first.</p>
       </div>
       <div className="flex flex-wrap gap-2 mt-auto">
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Geolocation API</span>
+        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Your location</span>
         <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Google Maps</span>
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Real-time</span>
+        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Map & list</span>
       </div>
     </div>
 
@@ -594,12 +413,12 @@ export default function Home() {
       </div>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Language Filters</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Search for doctors who speak your language. Especially useful for foreign tourists and inter-state travelers.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Filter doctors by the languages they speak. Especially useful for foreign tourists and inter-state travelers.</p>
       </div>
       <div className="flex flex-wrap gap-2 mt-auto">
         <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">English</span>
         <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Hindi</span>
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">+ 15 languages</span>
+        <span className="text-xs border border-dashed border-amber-300 text-amber-700 bg-amber-50 rounded-full px-3 py-1">More languages · coming soon</span>
       </div>
     </div>
 
@@ -610,12 +429,12 @@ export default function Home() {
         <span className="text-5xl font-bold text-slate-100 leading-none">03</span>
       </div>
       <div>
-        <h3 className="font-bold text-slate-900 text-lg mb-2">Turn-by-Turn Directions</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Get live directions to any provider via Google Maps, with estimated travel time and real-time traffic.</p>
+        <h3 className="font-bold text-slate-900 text-lg mb-2">Directions</h3>
+        <p className="text-slate-500 text-sm leading-relaxed">See the route and travel time on the map, then open turn-by-turn directions in Google Maps.</p>
       </div>
       <div className="flex flex-wrap gap-2 mt-auto">
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Directions API</span>
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Live traffic</span>
+        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Route preview</span>
+        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Google Maps</span>
       </div>
     </div>
 
@@ -627,7 +446,7 @@ export default function Home() {
       </div>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Smart Doctor Cards</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Rich profiles with ratings, specialties, timings, contact info, languages, and international payment support.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Profiles with ratings, specialties, opening hours, languages and the clinic's address.</p>
       </div>
       <div className="flex flex-wrap gap-2 mt-auto">
         <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Ratings</span>
@@ -644,11 +463,12 @@ export default function Home() {
       </div>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Pharmacy Locator</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Find 24-hour pharmacies with stock information. Never be stuck needing medication at 2am again.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Find nearby pharmacies and see which are open right now. Never be stuck needing medication at 2am again.</p>
       </div>
       <div className="flex flex-wrap gap-2 mt-auto">
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">24/7 filter</span>
+        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Open now filter</span>
         <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Nearby</span>
+        <span className="text-xs border border-dashed border-amber-300 text-amber-700 bg-amber-50 rounded-full px-3 py-1">Stock info · coming soon</span>
       </div>
     </div>
 
@@ -660,10 +480,10 @@ export default function Home() {
       </div>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Ratings & Reviews</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Community-verified reviews from real patients. Know what to expect before you walk in.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Reviews from patients, with a Verified visit badge when they show proof of their visit. Know what to expect before you walk in.</p>
       </div>
       <div className="flex flex-wrap gap-2 mt-auto">
-        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Verified reviews</span>
+        <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Verified visits</span>
         <span className="text-xs border border-slate-200 text-slate-600 rounded-full px-3 py-1">Star ratings</span>
       </div>
     </div>
@@ -690,7 +510,7 @@ export default function Home() {
       <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plane-icon lucide-plane"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Foreign Tourists</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">English-speaking doctors, international payment info, and cultural context for healthcare in India.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Find English-speaking doctors and 24/7 emergency rooms. Insurance and international payment details are coming soon.</p>
       </div>
     </div>
 
@@ -714,7 +534,7 @@ export default function Home() {
       <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-siren-icon lucide-siren"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/><path d="M21 12h1"/><path d="M18.5 4.5 18 5"/><path d="M2 12h1"/><path d="M12 2v1"/><path d="m4.929 4.929.707.707"/><path d="M12 12v6"/></svg></span>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Emergency Situations</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">Anyone needing immediate care fast — MediWay's Emergency Mode is built for this exact moment.</p>
+        <p className="text-slate-500 text-sm leading-relaxed">Anyone needing care fast: one tap to call 112 or 108, share your location, or find the nearest 24/7 emergency room.</p>
       </div>
     </div>
 

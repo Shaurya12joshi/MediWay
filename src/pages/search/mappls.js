@@ -4,8 +4,9 @@
 // markers and popups follow the MapLibre API. Markers and popups take HTML strings.
 
 import { getStatus } from '../../lib/hours';
+import { t } from '../../i18n';
 import { directionsUrl } from '../../lib/origin';
-import { KINDS, kindOf, placeDestination, placeStatus, telHref } from './kinds';
+import { DETAILS, KINDS, kindOf, placeDestination, placeStatus, telHref } from './kinds';
 import { specialtyText } from './filtering';
 
 const MAPPLS_KEY = import.meta.env.VITE_MAPPLS_KEY;
@@ -85,7 +86,8 @@ export async function fetchRoute(origin, d) {
 }
 
 // Popup buttons are wired by the map view: [data-open-dir] opens the directions drawer,
-// a[data-spa] navigates inside the app instead of reloading the page.
+// a[data-spa] navigates inside the app instead of reloading the page, [data-visit-place] is remembered
+// for the "Did you visit?" prompt. Text is in the visitor's language: popups are rebuilt when it changes.
 export function doctorPopupHtml(d) {
   const status = getStatus(d);
   return `
@@ -99,12 +101,12 @@ export function doctorPopupHtml(d) {
       </div>
       <div class="flex items-center flex-wrap gap-1.5 mt-2.5 text-[11px]">
         <span class="font-medium px-2 py-[3px] rounded-md ${status.open ? 'bg-[#F0FDF4] text-[#16A34A]' : 'bg-[#F1F5F9] text-[#64748B]'}">${status.open ? '●' : '○'} ${status.label}</span>
-        <span class="text-[#64748B]"><span class="text-[#F59E0B]">★</span> ${escapeHtml(d.rating ?? '—')}${d.distance_km != null ? ` · ${d.distance_km} km` : ''}</span>
+        <span class="text-[#64748B]"><span class="text-[#F59E0B]">★</span> ${escapeHtml(d.rating ?? '—')}${d.distance_km != null ? ` · ${t('common.km', { km: d.distance_km })}` : ''}</span>
       </div>
       <div class="text-[11px] text-[#94A3B8] mt-1.5 truncate">${escapeHtml(d.hospital)}</div>
       <div class="flex gap-1.5 mt-3">
-        <button class="flex-1 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer bg-[#D0423A] hover:bg-[#B8362F] text-white font-sans transition-colors" data-open-dir="${escapeHtml(d.id)}">Directions</button>
-        <a class="flex-1 py-2 rounded-lg text-[12px] font-semibold border-[1.5px] border-[#E2E8F0] hover:border-[#1E293B] bg-white text-[#1E293B] no-underline flex items-center justify-center font-sans transition-colors" href="/profile?id=${escapeHtml(d.id)}" data-spa>Profile</a>
+        <button class="flex-1 py-2 rounded-lg text-[12px] font-semibold border-none cursor-pointer bg-[#D0423A] hover:bg-[#B8362F] text-white font-sans transition-colors" data-open-dir="${escapeHtml(d.id)}">${t('common.directions')}</button>
+        <a class="flex-1 py-2 rounded-lg text-[12px] font-semibold border-[1.5px] border-[#E2E8F0] hover:border-[#1E293B] bg-white text-[#1E293B] no-underline flex items-center justify-center font-sans transition-colors" href="/doctor/${escapeHtml(d.id)}" data-spa>${t('card.profile')}</a>
       </div>
     </div>`;
 }
@@ -116,12 +118,20 @@ export function placePopupHtml(h, origin) {
       <div class="text-[10px] font-semibold uppercase tracking-[.08em]" style="color:${k.color}">${k.label}</div>
       <div class="font-serif text-[16px] leading-tight text-[#1E293B] mt-0.5">${escapeHtml(h.name)}</div>
       ${h.address ? `<div class="text-[11px] text-[#64748B] mt-1 leading-snug">${escapeHtml(h.address)}</div>` : ''}
-      <div class="text-[11px] mt-2 font-medium"><span class="${status.cls}">${status.text}</span>${h.distance_km != null ? `<span class="text-[#64748B] font-normal"> · ${h.distance_km} km</span>` : ''}</div>
+      <div class="text-[11px] mt-2 font-medium"><span class="${status.cls}">${status.text}</span>${h.distance_km != null ? `<span class="text-[#64748B] font-normal"> · ${t('common.km', { km: h.distance_km })}</span>` : ''}</div>
+      ${detailsHtml(h)}
       <div class="flex gap-1.5 mt-3">
-        <a class="flex-1 block text-center py-2 rounded-lg text-[12px] font-semibold bg-[#D0423A] hover:bg-[#B8362F] text-white no-underline transition-colors" href="${escapeHtml(directionsUrl(placeDestination(h), origin))}" target="_blank" rel="noopener">Directions</a>
-        ${h.phone ? `<a class="flex-1 block text-center py-2 rounded-lg text-[12px] font-semibold border-[1.5px] border-[#E2E8F0] hover:border-[#1E293B] bg-white text-[#1E293B] no-underline transition-colors" href="${escapeHtml(telHref(h.phone))}">Call</a>` : ''}
+        <a class="flex-1 block text-center py-2 rounded-lg text-[12px] font-semibold bg-[#D0423A] hover:bg-[#B8362F] text-white no-underline transition-colors" href="${escapeHtml(directionsUrl(placeDestination(h), origin))}" target="_blank" rel="noopener" data-visit-place="${escapeHtml(h.id)}" data-visit-name="${escapeHtml(h.name)}">${t('common.directions')}</a>
+        ${h.phone ? `<a class="flex-1 block text-center py-2 rounded-lg text-[12px] font-semibold border-[1.5px] border-[#E2E8F0] hover:border-[#1E293B] bg-white text-[#1E293B] no-underline transition-colors" href="${escapeHtml(telHref(h.phone))}">${t('common.call')}</a>` : ''}
       </div>
     </div>`;
+}
+
+// The traveller details we know, as a short list under the status
+function detailsHtml(h) {
+  const known = DETAILS.filter(d => h[d.key] === true)
+  if (!known.length) return ''
+  return `<div class="text-[11px] text-[#1D4ED8] mt-1.5 leading-snug">${known.map(d => `${d.icon} ${escapeHtml(t(`detail.${d.key}`))}`).join('<br>')}</div>`
 }
 
 export function placePinHtml(h) {

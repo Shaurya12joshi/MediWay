@@ -4,6 +4,8 @@ import { api, run, toError } from '../../store/api';
 // Admin-only endpoints, added to the shared API when the admin page loads
 
 export const PLACES_PAGE = 40, HOURS_PAGE = 20;
+// Questions for travellers, asked on the same call as the hours
+export const DETAIL_COLUMNS = ['intl_insurance', 'accepts_cards', 'english_desk', 'travel_clinic', 'female_doctor'];
 
 // Imported places: never auto-reviewed, or held back by the rules in auto_review_places()
 const needsALook = q => q.eq('status', 'pending').or('review_note.is.null,review_note.like."held:*"');
@@ -22,11 +24,31 @@ function placesQuery({ city, kind, view }, select, opts) {
   return q;
 }
 
-function hoursQuery({ cityName, kind, phoneOnly }, select, opts) {
-  let q = needsHours(supabase.from('hospitals').select(select, opts)).eq('city', cityName ?? '').eq('kind', kind);
-  if (phoneOnly) q = q.not('phone', 'is', null);
-  return q;
+// Filled automatically by scripts/enrich-hours.mjs (hours, or a hospital's ER answer on its own)
+const AUTO_SOURCES = ['osm', 'website', 'website-ai', 'name'];
+
+// Hours views: 'suggestions' (the script found something but wasn't sure), 'call' (nothing found:
+// the phone queue) and 'auto' (live automatic hours, to spot-check or remove)
+// Hospitals this close to a tourist area (cities.areas) are the ones worth a phone call
+export const NEAR_TOURISTS_KM = 2; // same as scripts/lib/city.mjs
+
+// `tourist`: use hospitals.tourist_km (20261005_city_launch.sql); false before that migration is run
+function hoursQuery({ cityName, kind, phoneOnly, nearTourists, view }, select, opts, tourist = true) {
+  let q = supabase.from('hospitals').select(select, opts).eq('city', cityName ?? '').eq('kind', kind);
+  if (view === 'suggestions') return needsHours(q).or('suggested_schedule.not.is.null,suggested_er24.not.is.null');
+  if (view === 'auto') return q.or(`hours_source.in.(${AUTO_SOURCES.join(',')}),er24_auto.is.true`);
+  q = needsHours(q).is('suggested_schedule', null).is('suggested_er24', null);
+  if (tourist && nearTourists && kind === 'hospital') q = q.lte('tourist_km', NEAR_TOURISTS_KM);
+  return phoneOnly ? q.not('phone', 'is', null) : q;
 }
+
+const HOURS_ORDER = {
+  suggestions: [['name']],
+  call: [['hours_checked_at', { ascending: true, nullsFirst: true }], ['name']], // places nobody has tried first
+  auto: [['hours_checked_at', { ascending: false }], ['name']],                 // newest first
+};
+// Nearest to tourists first, then the order above
+const TOURIST_ORDER = ['tourist_km', { ascending: true, nullsFirst: false }];
 
 async function countOf(request) {
   const { count, error } = await request;
@@ -53,7 +75,7 @@ function removeRowOnSuccess(endpoint) {
 }
 
 const adminApi = api
-  .enhanceEndpoints({ addTagTypes: ['AdminCounts', 'PendingReviews', 'Places', 'PlacesSummary', 'HoursSummary'] })
+  .enhanceEndpoints({ addTagTypes: ['AdminCounts', 'PendingReviews', 'Places', 'PlacesSummary', 'HoursSummary', 'Applications'] })
   .injectEndpoints({
     endpoints: build => ({
 
@@ -67,12 +89,13 @@ const adminApi = api
       // The numbers on the tabs
       adminCounts: build.query({
         async queryFn() {
-          const [reviews, places, hours] = await Promise.all([
+          const [reviews, places, hours, applications] = await Promise.all([
             supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('proof_status', 'pending'),
             needsALook(supabase.from('places_staging').select('id', { count: 'exact', head: true })),
             needsHours(supabase.from('hospitals').select('id', { count: 'exact', head: true })),
+            supabase.from('doctor_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
           ]);
-          return { data: { reviews: reviews.count ?? 0, places: places.count ?? 0, hours: hours.count ?? 0 } };
+          return { data: { reviews: reviews.count ?? 0, places: places.count ?? 0, hours: hours.count ?? 0, applications: applications.count ?? 0 } };
         },
         providesTags: ['AdminCounts'],
       }),
@@ -83,12 +106,15 @@ const adminApi = api
 
       // ---------- Review proofs ----------
 
+      // Reviews of doctors and of places (place reviews need 20261004_tourist_features.sql)
       pendingReviews: build.query({
-        queryFn: () => run(supabase
-          .from('reviews')
-          .select('*, doctors(name, hospital)')
-          .eq('proof_status', 'pending')
-          .order('proof_submitted_at', { ascending: true })),
+        async queryFn() {
+          const query = select => supabase.from('reviews').select(select)
+            .eq('proof_status', 'pending').order('proof_submitted_at', { ascending: true });
+          let result = await query('*, doctors(name, hospital), hospitals(name, address)');
+          if (result.error) result = await query('*, doctors(name, hospital)'); // migration not run yet
+          return result.error ? { error: toError(result.error) } : { data: result.data };
+        },
         providesTags: ['PendingReviews'],
       }),
 
@@ -156,29 +182,77 @@ const adminApi = api
         invalidatesTags: (_r, error, { dryRun }) => error || dryRun ? [] : ['Places', 'PlacesSummary', 'AdminCounts'],
       }),
 
-      // ---------- Hours: phone queue ----------
-      // Saving goes through update_place_hours(); phone-confirmed hours are never overwritten by a script.
+      // ---------- Hours ----------
+      // scripts/enrich-hours.mjs fills what it can (see 20261003_auto_hours.sql); people handle the rest.
+      // Confirming goes through update_place_hours(); confirmed hours are never overwritten by a script.
 
       hoursSummary: build.query({
-        queryFn: args => countOf(hoursQuery(args, 'id', { count: 'exact', head: true })),
+        async queryFn(args) {
+          const result = await countOf(hoursQuery(args, 'id', { count: 'exact', head: true }));
+          return result.error ? countOf(hoursQuery(args, 'id', { count: 'exact', head: true }, false)) : result;
+        },
         providesTags: ['HoursSummary'],
       }),
 
-      // Places nobody has tried come first
       hoursPages: build.infiniteQuery({
         infiniteQueryOptions: pagedOptions,
         async queryFn({ queryArg, pageParam }) {
-          const { data, error } = await hoursQuery(queryArg, 'id, name, kind, address, phone, lat, lng, er24, schedule, hours_source, hours_checked_at')
-            .order('hours_checked_at', { ascending: true, nullsFirst: true }).order('name')
-            .range(pageParam, pageParam + HOURS_PAGE - 1);
+          const page = (columns, tourist) => {
+            let q = hoursQuery(queryArg, 'id, name, kind, address, phone, website, lat, lng, er24, er24_auto, schedule, ' +
+              'hours_source, hours_checked_at, hours_evidence, suggested_schedule, suggested_er24, suggestion_evidence' + columns, undefined, tourist);
+            const order = HOURS_ORDER[queryArg.view];
+            for (const [column, options] of tourist && queryArg.view !== 'auto' ? [TOURIST_ORDER, ...order] : order) q = q.order(column, options);
+            return q.range(pageParam, pageParam + HOURS_PAGE - 1);
+          };
+          // Traveller details and tourist distances come with 20261004_tourist_features.sql and
+          // 20261005_city_launch.sql; the queue works without them
+          let { data, error } = await page(`, ${DETAIL_COLUMNS.join(', ')}, tourist_area, tourist_km`, true);
+          if (error) ({ data, error } = await page(`, ${DETAIL_COLUMNS.join(', ')}`, false));
+          if (error) ({ data, error } = await page('', false));
           if (error) return { error: toError(error) };
           return { data: { rows: data, full: data.length === HOURS_PAGE } };
         },
       }),
 
-      // outcome: 'verified' (with a schedule and/or ER answer) or 'unreachable'
+      // outcome: 'verified' (a person confirmed: by phone, by accepting a suggestion, or "looks right")
+      // with a schedule and/or ER answer, or 'unreachable'
       saveHours: build.mutation({
         queryFn: ({ id, outcome, schedule, er24 }) => run(supabase.rpc('update_place_hours', { place_id: id, outcome, new_schedule: schedule, has_er24: er24 })),
+        onQueryStarted: removeRowOnSuccess('hoursPages'),
+        invalidatesTags: (_r, error) => error ? [] : ['HoursSummary', 'AdminCounts'],
+      }),
+
+      // Traveller details an admin got on the phone: { intl_insurance: true, accepts_cards: null, … }
+      saveDetails: build.mutation({
+        queryFn: ({ id, details }) => run(supabase.rpc('update_place_details', { place_id: id, details })),
+      }),
+
+      // ---------- Doctor applications (the public "Join MediWay" form) ----------
+
+      applications: build.query({
+        queryFn: () => run(supabase.from('doctor_applications').select('*, hospitals(name, address)')
+          .eq('status', 'pending').order('created_at', { ascending: true })),
+        providesTags: ['Applications'],
+      }),
+
+      // Approving creates the doctor at the chosen listed place
+      decideApplication: build.mutation({
+        queryFn: ({ id, approve, placeId }) => run(approve
+          ? supabase.rpc('approve_doctor_application', { application_id: id, at_place: placeId })
+          : supabase.rpc('reject_doctor_application', { application_id: id })),
+        invalidatesTags: (_r, error) => error ? [] : ['Applications', 'AdminCounts'],
+      }),
+
+      // A wrong suggestion: drop it, the place moves to the phone queue
+      dismissSuggestion: build.mutation({
+        queryFn: ({ id }) => run(supabase.rpc('dismiss_hours_suggestion', { place_id: id })),
+        onQueryStarted: removeRowOnSuccess('hoursPages'),
+        invalidatesTags: (_r, error) => error ? [] : ['HoursSummary'],
+      }),
+
+      // Wrong automatic hours: off the site and back to the phone queue; scripts won't refill them
+      removeAutoHours: build.mutation({
+        queryFn: ({ id }) => run(supabase.rpc('remove_auto_hours', { place_id: id })),
         onQueryStarted: removeRowOnSuccess('hoursPages'),
         invalidatesTags: (_r, error) => error ? [] : ['HoursSummary', 'AdminCounts'],
       }),
@@ -200,4 +274,9 @@ export const {
   useHoursSummaryQuery,
   useHoursPagesInfiniteQuery,
   useSaveHoursMutation,
+  useDismissSuggestionMutation,
+  useRemoveAutoHoursMutation,
+  useSaveDetailsMutation,
+  useApplicationsQuery,
+  useDecideApplicationMutation,
 } = adminApi;

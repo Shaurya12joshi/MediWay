@@ -34,8 +34,11 @@ function ProofCard({ review: r }) {
     <div className="bg-white border border-[#E6E6E1] rounded-[16px] p-[16px] sm:p-[20px] flex flex-col sm:flex-row gap-[16px] sm:gap-[20px]">
       <ProofPhoto path={r.proof_photo_path} />
       <div className="flex-1 min-w-0">
-        <div className="font-serif text-[17px] text-[#1E293B]">{r.doctors?.name || 'Unknown doctor'}</div>
-        <div className="text-[12px] text-[#94A3B8] mb-[10px]">{r.doctors?.hospital || ''}</div>
+        {r.place_id
+          ? <><div className="font-serif text-[17px] text-[#1E293B]">{r.hospitals?.name || 'Unknown place'} <span className="text-[11px] font-sans font-semibold text-[#64748B] bg-[#F2F1ED] rounded-[5px] px-[6px] py-[1px] align-middle">Place review</span></div>
+              <div className="text-[12px] text-[#94A3B8] mb-[10px]">{r.hospitals?.address || ''}</div></>
+          : <><div className="font-serif text-[17px] text-[#1E293B]">{r.doctors?.name || 'Unknown doctor'}</div>
+              <div className="text-[12px] text-[#94A3B8] mb-[10px]">{r.doctors?.hospital || ''}</div></>}
         <div className="flex items-center gap-[8px] mb-[8px]">
           <span className="text-[13px] font-semibold text-[#1E293B]">{r.author}</span>
           <Stars rating={r.rating} size={13} className="gap-0" />

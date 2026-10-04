@@ -33,6 +33,7 @@ export function matchesDoctor(d, filters, query) {
   if (filters.walkIn    && !d.walk_in)                                          return false;
   if (filters.english   && !d.languages?.includes('English'))                   return false;
   if (filters.insurance && !d.insurance)                                        return false;
+  if (filters.femaleDoctor && d.gender !== 'female')                            return false;
   return !q || matchesSearchDoctor(d, q);
 }
 
@@ -43,6 +44,13 @@ export function matchesPlace(h, filters, query) {
   if (KINDS[filters.type] && h.kind !== filters.type) return false;
   if (h.distance_km > filters.distance)               return false;
   if (filters.openNow && !((kindOf(h) === KINDS.hospital && h.er24) || getStatus(h).open)) return false;
+  if (filters.er24 && !(kindOf(h) === KINDS.hospital && h.er24 === true)) return false;
+  // Traveller details: only places we know offer it
+  if (filters.english && h.english_desk !== true)        return false;
+  if (filters.intlInsurance && h.intl_insurance !== true) return false;
+  if (filters.cards && h.accepts_cards !== true)         return false;
+  if (filters.travelClinic && h.travel_clinic !== true)  return false;
+  if (filters.femaleDoctor && h.female_doctor !== true)  return false;
   return !q || matchesSearchPlace(h, q);
 }
 
@@ -83,40 +91,32 @@ export function visiblePlaces(all, filters, shown, previewSize) {
   return [...preview, ...extra];
 }
 
+// Parts of an address that say nothing to someone already in the city: the country, any state or
+// union territory, district labels and PIN codes
+const STATES = ['andhra pradesh', 'arunachal pradesh', 'assam', 'bihar', 'chhattisgarh', 'goa', 'gujarat', 'haryana',
+  'himachal pradesh', 'jharkhand', 'karnataka', 'kerala', 'madhya pradesh', 'maharashtra', 'manipur', 'meghalaya',
+  'mizoram', 'nagaland', 'odisha', 'orissa', 'punjab', 'rajasthan', 'sikkim', 'tamil nadu', 'telangana', 'tripura',
+  'uttar pradesh', 'uttarakhand', 'uttaranchal', 'west bengal', 'andaman and nicobar islands', 'chandigarh',
+  'dadra and nagar haveli and daman and diu', 'delhi', 'nct of delhi', 'new delhi', 'jammu and kashmir', 'ladakh',
+  'lakshadweep', 'puducherry', 'pondicherry'];
+const NOT_A_LOCALITY = new RegExp(`^(india|bharat|${STATES.join('|')})$|\\b(sub-?district|district|tehsil|taluka?|mandal)\\b|^\\d{6}$|^(\\D+ )?\\d{3} ?\\d{3}$`, 'i');
+
 // Imported addresses often start with a house or shop number: show the locality instead
 export function localityOf(address, cityName) {
   const city = cityName?.toLowerCase();
-  const parts = (address || '').split(',').map(p => p.trim())
-    .filter(p => p && p.toLowerCase() !== city && !/sub-district|uttar pradesh|india|^\d{6}$/i.test(p));
+  const parts = (address || '').split(',').map(p => p.trim().replace(/\s+/g, ' '))
+    .filter(p => p && p.toLowerCase() !== city && !NOT_A_LOCALITY.test(p));
   return parts.findLast(p => !/\d/.test(p)) ?? parts[0] ?? null;
 }
 
-// Travel time estimates and sample steps for the directions drawer. Times are replaced by real
-// road figures when the map has routed the trip.
+// Rough travel times for the directions drawer, until the map has routed the trip on real roads.
+// distance_km is a straight line; roads in Indian cities run about a third longer.
 export const TRAVEL_SPEEDS = { drive: 40, walk: 5, transit: 25 };
+const ROAD_FACTOR = 1.3;
 
-export function simDirections(doc, mode) {
-  const mins = Math.round((doc.distance_km / TRAVEL_SPEEDS[mode]) * 60);
-  const steps = {
-    drive: [
-      { icon: '↑',  text: 'Head south on MG Road',          dist: '0.3 km' },
-      { icon: '⟵', text: 'Turn right onto Residency Road',  dist: '1.2 km' },
-      { icon: '⟶', text: 'Turn left onto Hospital Avenue',  dist: '0.8 km' },
-      { icon: '📍', text: `Arrive at ${doc.hospital}`,       dist: '' },
-    ],
-    walk: [
-      { icon: '↑',  text: 'Walk along the main road',         dist: '0.4 km' },
-      { icon: '⟵', text: 'Cross at the pedestrian crossing', dist: '0.2 km' },
-      { icon: '📍', text: `Arrive at ${doc.hospital}`,        dist: '' },
-    ],
-    transit: [
-      { icon: '🚌', text: 'Board Bus 335 towards Silk Board', dist: '3 stops' },
-      { icon: '⬇',  text: 'Alight at Hospital Circle',        dist: '' },
-      { icon: '↑',  text: 'Walk 200m to entrance',            dist: '0.2 km' },
-      { icon: '📍', text: `Arrive at ${doc.hospital}`,        dist: '' },
-    ],
-  };
-  return { mins, steps: steps[mode] || steps.drive };
+export function estimateMinutes(distanceKm, mode) {
+  if (!Number.isFinite(+distanceKm)) return null;
+  return Math.max(1, Math.round((distanceKm * ROAD_FACTOR / TRAVEL_SPEEDS[mode]) * 60));
 }
 
 export function fmtMinutes(mins) {

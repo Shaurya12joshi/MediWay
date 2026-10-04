@@ -1,13 +1,17 @@
 import { createBrowserRouter, Navigate, Outlet, ScrollRestoration, useLocation } from 'react-router';
 import Toast from './components/Toast';
+import VisitPrompt from './components/VisitPrompt';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
+// Loaded with the app, not on demand, so it is on the phone even if it was never opened online
+import Emergency from './pages/Emergency';
 
 function RootLayout() {
   return (
     <>
       <Outlet />
       <Toast />
+      <VisitPrompt />
       <ScrollRestoration />
     </>
   );
@@ -41,10 +45,15 @@ export const router = createBrowserRouter([
       { index: true, Component: Home },
       { path: 'search', lazy: page(() => import('./pages/search/SearchPage')) },
       { path: 'profile', lazy: page(() => import('./pages/Profile')) },
+      { path: 'doctor/:id', lazy: page(() => import('./pages/Profile')) },
+      { path: 'emergency', Component: Emergency },
+      { path: 'join', lazy: page(() => import('./pages/Join')) },
       { path: 'review', lazy: page(() => import('./pages/Review')) },
       { path: 'auth', lazy: page(() => import('./pages/Auth')) },
       { path: 'admin', lazy: page(() => import('./pages/admin/AdminPage')) },
       ...Object.entries(LEGACY_PAGES).map(([path, to]) => ({ path, element: <LegacyRedirect to={to} /> })),
+      // /varanasi/hospitals, /varanasi/emergency …: indexable city pages (see scripts/prerender.mjs)
+      { path: ':city/:category', lazy: page(() => import('./pages/search/CityPage')) },
       { path: '*', Component: NotFound },
     ],
   },
