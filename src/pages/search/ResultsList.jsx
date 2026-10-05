@@ -14,7 +14,8 @@ import { PLACES_FETCH_LIMIT } from '../../store/api';
 import { ClockIcon, DirectionsIcon, PinIcon } from '../../components/icons';
 import { Stars } from '../../components/ui';
 import { KINDS, KindIcon, TravellerBadges, kindOf, placeDestination, placeStatus, telHref } from './kinds';
-import { localityOf, showsDoctors, showsPlaces, specialtyText, visiblePlaces } from './filtering';
+import { specialtyLabels } from '../../lib/specialties';
+import { localityOf, showsDoctors, showsPlaces, visiblePlaces } from './filtering';
 
 const SORTS = [['rating', 'sort.rating', 'sort.byRating'], ['distance', 'sort.distance', 'sort.byDistance'], ['name', 'sort.name', 'sort.byName']];
 const SORT_TAB = 'px-3.5 py-[7px] rounded-lg text-[13px] font-medium border-[1.5px] cursor-pointer font-sans transition-all';
@@ -101,7 +102,7 @@ function DoctorCard({ doctor: d, anim }) {
         <div className="flex items-start justify-between gap-2 mb-[3px]">
           <div className="min-w-0">
             <p className="font-serif text-[16px] sm:text-[18px] text-[#1E293B] leading-[1.2]">{d.name}</p>
-            <p className="text-[13px] text-[#D0423A] font-medium mb-[5px]">{specialtyText(d)}</p>
+            <p className="text-[13px] text-[#D0423A] font-medium mb-[5px]">{specialtyLabels(t, d)}</p>
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
             {d.featured && <span className="bg-[#D0423A] text-white text-[10px] font-bold uppercase tracking-[.06em] px-2 py-[3px] rounded-[6px] shrink-0">{t('card.topPick')}</span>}

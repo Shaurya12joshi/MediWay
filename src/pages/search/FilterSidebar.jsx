@@ -6,7 +6,8 @@ const TYPES = [['all', 'filter.all'], ['doctor', 'kind.doctors'], ['hospital', '
 // Values are what the database stores; labels are translated
 const SPECIALTIES = [
   'General Physician', 'Delhi Belly', 'Respiratory Illness', 'Fever', 'Dengue', 'Typhoid', 'Malaria', 'Animal Bites',
-  'Hepatitis', 'Heat-Related', 'Cardiologist', 'Dermatologist', 'ENT', 'Orthopedic', 'Pediatric',
+  'Hepatitis', 'Heat-Related', 'Cardiologist', 'Dermatologist', 'ENT', 'Orthopedic', 'Pediatric', 'Gynecologist',
+  'Ophthalmologist', 'Dentist',
 ];
 const OPTIONS = [['openNow', 'filter.openNow'], ['er24', 'filter.er24'], ['walkIn', 'filter.walkIn'], ['insurance', 'filter.insurance']];
 const TRAVELLER_OPTIONS = [

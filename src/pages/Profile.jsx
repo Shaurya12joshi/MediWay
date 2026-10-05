@@ -10,6 +10,7 @@ import { NotFoundMessage, Spinner, Stars, useTitle } from '../components/ui';
 import LanguagePicker from '../components/LanguagePicker';
 import { useT } from '../i18n';
 import { rememberVisit } from '../lib/visits';
+import { specialtyLabels } from '../lib/specialties';
 
 const SORTS = ['recent', 'helpful', 'highest', 'lowest'];
 const FILTERS = ['all', 'verified', '5', '4', 'low'];
@@ -125,7 +126,7 @@ function DoctorProfile({ doctor: d, reviews }) {
 
   const status = getStatus(d);
   const timings = scheduleText(d);
-  const specialtyText = Array.isArray(d.specialty) ? d.specialty.join(', ') : (d.specialty || '');
+  const specialtyText = specialtyLabels(t, d);
   const languages = d.languages || [];
   const firstName = (d.name || '').split(' ').slice(1).join(' ');
   const displayRating = total ? avg : '—';
@@ -167,6 +168,11 @@ function DoctorProfile({ doctor: d, reviews }) {
                   <h1 className="font-serif text-[23px] sm:text-[30px] leading-[1.1] text-text break-words">{d.name}</h1>
                   <div className="text-[14px] font-semibold text-red mt-[4px]">{specialtyText}</div>
                   {d.qualification && <div className="text-[12px] text-faint mt-[2px]">{d.qualification}</div>}
+                  {d.source === 'website' && d.source_url && (
+                    <div className="text-[11px] text-faint mt-[4px]">
+                      {t('profile.fromWebsite', { place: d.hospital || '' })} · <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-text">{t('profile.sourceLink')}</a>
+                    </div>
+                  )}
                 </div>
                 <div className="bg-bg border border-border rounded-[14px] py-[10px] px-[14px] sm:py-[12px] sm:px-[18px] text-center shrink-0 min-w-[96px] sm:min-w-[110px]">
                   <div className="font-serif text-[28px] sm:text-[36px] leading-[1] text-text">{displayRating}</div>
@@ -179,10 +185,12 @@ function DoctorProfile({ doctor: d, reviews }) {
                   <PinIcon size={14} fill="none" stroke="#94A3B8" strokeWidth="2" />
                   {d.hospital || ''}{distance != null && <> · <strong className="text-text font-semibold">{t('card.kmAway', { km: distance })}</strong></>}
                 </div>
-                <div className="flex items-center gap-[6px] text-[13px] text-muted">
-                  <ClockIcon size={14} stroke="#94A3B8" />
-                  <strong className="text-text font-semibold">{t('profile.years', { years: d.experience ?? '—' })}</strong> {t('profile.experience')}
-                </div>
+                {d.experience && (
+                  <div className="flex items-center gap-[6px] text-[13px] text-muted">
+                    <ClockIcon size={14} stroke="#94A3B8" />
+                    <strong className="text-text font-semibold">{t('profile.years', { years: d.experience })}</strong> {t('profile.experience')}
+                  </div>
+                )}
                 <div className={`flex items-center gap-[6px] text-[13px] text-muted ${status.open ? 'text-[#16A34A] font-semibold' : ''}`}>
                   <div className={`w-[8px] h-[8px] rounded-full inline-block ${status.open ? 'bg-[#22C55E]' : 'bg-faint'}`}></div>
                   {status.label}

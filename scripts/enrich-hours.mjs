@@ -35,7 +35,6 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
-import { createInterface } from 'node:readline/promises'
 import { toOsmString } from './lib/opening-hours.mjs'
 import { extractHours, parseRobots, robotsAllows, htmlToText, pageExcerpts, infoPageUrl } from './lib/page-hours.mjs'
 import { asciiJson } from './lib/ascii-json.mjs'
@@ -43,6 +42,7 @@ import {
   DEFAULT_MODEL, PROMPT_VERSION, SEARCH_PROMPT_VERSION, batchRequest, answerOf, estimateCost, interpretAnswer,
   searchRequest, searchAnswerOf, interpretSearchAnswer, withoutSchema,
 } from './lib/ai-hours.mjs'
+import { withRetries as retry, confirm, sleep } from './lib/gemini.mjs'
 import { NEAR_TOURISTS_KM, fetchCity, livePlaces, nearestArea, sourceKeysOf, supabaseRest } from './lib/city.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -282,7 +282,6 @@ async function fetchRobots(origin) {
 // asks about pages that changed or weren't answered. A batch still running when the script stops is picked up next run.
 
 const FINISHED = ['JOB_STATE_SUCCEEDED', 'JOB_STATE_FAILED', 'JOB_STATE_CANCELLED', 'JOB_STATE_EXPIRED']
-const MAX_ATTEMPTS = 5
 
 async function readWithGemini(items) {
   const cacheFile = join(IMPORTS, `hours-ai-${slug}.json`)
@@ -371,7 +370,7 @@ async function searchForEmergencyRooms(places, city, erSettled) {
       let answered = 0
       for (const [i, p] of ask.entries()) {
         const started = Date.now()
-        const result = await withRetries(() => call(searchRequest(p.live ?? p, city)))
+        const result = await retry(() => call(searchRequest(p.live ?? p, city)), model)
         if (result.stop) { console.log(`  Stopped: ${result.stop}\n  ${answered} looked up and saved; run again later to continue.`); break }
         if (result.response) { cache.answers[keyOf(p)] = searchAnswerOf(result.response); save(); answered++ }
         if ((i + 1) % 10 === 0 || i === ask.length - 1) console.log(`  … ${i + 1}/${ask.length} searched · ${answered} answered`)
@@ -434,7 +433,7 @@ async function askOneByOne(ai, todo, keyOf, cache, save) {
   let answered = 0, skipped = 0
   for (const [i, it] of todo.entries()) {
     const started = Date.now()
-    const result = await withRetries(() => ai.models.generateContent({ model, ...batchRequest(it.place, it.url, it.excerpts) }))
+    const result = await retry(() => ai.models.generateContent({ model, ...batchRequest(it.place, it.url, it.excerpts) }), model)
     if (result.stop) {
       console.log(`  Stopped: ${result.stop}\n  ${answered} answered and saved; run the same command again later to continue.`)
       break
@@ -443,38 +442,6 @@ async function askOneByOne(ai, todo, keyOf, cache, save) {
     if ((i + 1) % 10 === 0 || i === todo.length - 1) console.log(`  … ${i + 1}/${todo.length} asked · ${answered} answered${skipped ? ` · ${skipped} skipped (retried next run)` : ''}`)
     await sleep(Math.max(0, gap - (Date.now() - started)))
   }
-}
-
-// Busy model (503) or rate limit (429): wait and retry. A daily quota, or a model that stays busy, ends the run
-// (stop); a request the API rejects outright is skipped and retried on the next run.
-async function withRetries(call) {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return { response: await call() }
-    } catch (err) {
-      const retryAfter = +(err.message?.match(/"retryDelay":\s*"(\d+)s"/)?.[1] ?? 0)
-      const busy = err.status === 503 || err.status === 500
-      const limited = err.status === 429
-      if (limited && (retryAfter > 300 || /per ?day|PerDay/i.test(err.message))) return { stop: 'the free tier’s daily limit for this model is used up.' }
-      if ((busy || limited) && attempt < MAX_ATTEMPTS) {
-        const wait = Math.min(120, retryAfter || 10 * 2 ** (attempt - 1))
-        console.log(`  … Gemini ${busy ? 'is busy' : 'rate limit'} (${err.status}); waiting ${wait}s`)
-        await sleep(wait * 1000)
-        continue
-      }
-      if (busy) return { stop: `${model} is overloaded right now. Try again later, or use --model gemini-3.5-flash-lite.` }
-      if (limited) return { stop: 'Gemini keeps rate-limiting this key. Try a lower --rpm, or run again later.' }
-      console.log(`  … skipped one page: ${err.status ?? ''} ${err.message?.slice(0, 160)}`)
-      return {}
-    }
-  }
-}
-
-async function confirm(question) {
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  const reply = await rl.question(`${question} [y/N] `)
-  rl.close()
-  return /^y(es)?$/i.test(reply.trim())
 }
 
 // ---------- Output ----------
@@ -522,6 +489,5 @@ function groupBy(list, key) {
   return out
 }
 const countBy = (list, key) => [...groupBy(list, x => x[key])].map(([k, v]) => `${k} ${v.length}`).join(' · ') || 'none'
-const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 await main()

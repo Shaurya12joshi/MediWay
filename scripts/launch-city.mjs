@@ -6,6 +6,8 @@
 //                                                        1. import-places.mjs --push      (OpenStreetMap + Overture into the review queue)
 //                                                        2. auto_review_places()          (publishes clear cases, holds the rest)
 //                                                        3. enrich-hours.mjs --ai --push  (hours and ER status from websites, via Gemini)
+//                                                        4. import-doctors.mjs --push     (doctors listed on hospital and clinic websites)
+//                                                        5. auto_review_doctors()         (publishes the clear ones)
 //                                                      also passes on: --search --model <id> --yes --rpm <n> --no-overture
 //   node scripts/launch-city.mjs --city goa --launch   sets launched = true once every check passes (--force to launch anyway)
 //
@@ -15,7 +17,13 @@
 
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
+import { specialtiesFor } from '../src/lib/specialties.js'
 import { ER_REACH_KM, NEAR_TOURISTS_KM, ROOT, addCitySql, distanceKm, fetchCity, livePlaces, nearestArea, readEnv, supabaseRest } from './lib/city.mjs'
+
+// The search page's specialty chips (src/pages/search/FilterSidebar.jsx)
+const SPECIALTY_CHIPS = ['General Physician', 'Delhi Belly', 'Respiratory Illness', 'Fever', 'Dengue', 'Typhoid', 'Malaria', 'Animal Bites',
+  'Hepatitis', 'Heat-Related', 'Cardiologist', 'Dermatologist', 'ENT', 'Orthopedic', 'Pediatric', 'Gynecologist', 'Ophthalmologist', 'Dentist']
+const MIN_DOCTORS_PER_CHIP = 3
 
 // What "good enough" means. The must: a traveller at any of the sights can reach a known 24/7 emergency
 // room within ER_REACH_KM. The rest are warnings: worth improving, but they don't hold a launch back.
@@ -71,10 +79,10 @@ async function runSteps(city) {
     if (status !== 0) fail(`scripts/${script} stopped (exit ${status}). Fix that and run again: finished steps are safe to repeat.`)
   }
 
-  console.log(`\n━━ 1/3 Import ${city.name}`)
+  console.log(`\n━━ 1/5 Import ${city.name}`)
   node('import-places.mjs', ['--push', ...pass(['no-overture'])])
 
-  console.log(`\n━━ 2/3 Auto-review`)
+  console.log(`\n━━ 2/5 Auto-review`)
   try {
     const result = await service.rpc('auto_review_places', { city_slug: slug, dry_run: false })
     console.log(`✓ Published ${result.publish}, merged ${result.merge} duplicates, held for a person: ${JSON.stringify(result.held)}`)
@@ -82,8 +90,19 @@ async function runSteps(city) {
     fail(`auto_review_places failed: ${err.message.slice(0, 300)}\n  Has 20261003_auto_review.sql been run?`)
   }
 
-  console.log(`\n━━ 3/3 Hours and emergency rooms`)
+  console.log(`\n━━ 3/5 Hours and emergency rooms`)
   node('enrich-hours.mjs', ['--ai', '--push', ...pass(['search', 'model', 'yes', 'rpm'])])
+
+  console.log(`\n━━ 4/5 Doctors from hospital and clinic websites`)
+  node('import-doctors.mjs', ['--push', ...pass(['yes', 'rpm'])])
+
+  console.log(`\n━━ 5/5 Auto-review doctors`)
+  try {
+    const result = await service.rpc('auto_review_doctors', { city_slug: slug, dry_run: false })
+    console.log(`✓ Published ${result.publish}, added to existing profiles ${result.merge}, held for a person: ${JSON.stringify(result.held)}`)
+  } catch (err) {
+    console.log(`✗ auto_review_doctors failed: ${err.message.slice(0, 200)}\n  Has 20261006_doctor_import.sql been run?`)
+  }
 }
 
 // ---------- 2. Where the city stands ----------
@@ -133,6 +152,12 @@ async function measure(city) {
       return { name: a.name, km }
     }).filter(a => !(a.km <= ER_REACH_KM)),
     suggestions: places.filter(p => p.suggested_schedule || p.suggested_er24 != null).length,
+    // Doctors behind each specialty chip (a condition chip counts the specialists who treat it)
+    ...(await (async () => {
+      const doctors = await anon.all(`doctors?select=id,specialty&city=eq.${encodeURIComponent(city.name)}`).catch(() => [])
+      const chips = Object.fromEntries(SPECIALTY_CHIPS.map(c => [c, doctors.filter(d => specialtiesFor(c).some(s => d.specialty?.includes(s))).length]))
+      return { doctors: doctors.length, chips }
+    })()),
   }
 }
 
@@ -191,6 +216,13 @@ function checklist(city, r) {
       ok: r.near > 0 && hoursShare >= MIN_HOURS_NEAR_TOURISTS,
       warning: true,
       fix: `node scripts/enrich-hours.mjs --city ${slug} --ai --push, then Admin -> Hours`,
+    },
+    {
+      label: `Doctors: ${r.doctors} · specialty chips with at least ${MIN_DOCTORS_PER_CHIP}: ${Object.values(r.chips).filter(n => n >= MIN_DOCTORS_PER_CHIP).length} of ${SPECIALTY_CHIPS.length}` +
+        (Object.values(r.chips).some(n => n < MIN_DOCTORS_PER_CHIP) ? ` (short: ${Object.entries(r.chips).filter(([, n]) => n < MIN_DOCTORS_PER_CHIP).map(([c, n]) => `${c} ${n}`).join(', ')})` : ''),
+      ok: Object.values(r.chips).every(n => n >= MIN_DOCTORS_PER_CHIP),
+      warning: true,
+      fix: `node scripts/import-doctors.mjs --city ${slug} --push, then Admin -> Imported doctors -> ⚡ Auto-review. Share mediway.in/join with clinics near tourists.`,
     },
     {
       label: `Suggestions waiting in Admin -> Hours: ${r.suggestions}`,

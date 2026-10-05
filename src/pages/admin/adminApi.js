@@ -15,6 +15,14 @@ const needsHours = q => q
   .or('schedule.is.null,schedule.eq.[],and(kind.eq.hospital,er24.is.null)')
   .or('hours_source.is.null,hours_source.neq.phone');
 
+// Doctors read from websites by scripts/import-doctors.mjs (20261006_doctor_import.sql)
+function doctorsQuery({ city, view }, select, opts) {
+  let q = supabase.from('doctors_staging').select(select, opts).eq('city', city);
+  if (view === 'review') q = q.eq('status', 'pending').or('review_note.is.null,review_note.like."held:*"');
+  if (view === 'auto') q = q.eq('status', 'approved').like('review_note', 'auto:*');
+  return q;
+}
+
 function placesQuery({ city, kind, view }, select, opts) {
   let q = supabase.from('places_staging').select(select, opts).eq('city', city);
   if (view === 'review') q = needsALook(q);
@@ -75,7 +83,7 @@ function removeRowOnSuccess(endpoint) {
 }
 
 const adminApi = api
-  .enhanceEndpoints({ addTagTypes: ['AdminCounts', 'PendingReviews', 'Places', 'PlacesSummary', 'HoursSummary', 'Applications'] })
+  .enhanceEndpoints({ addTagTypes: ['AdminCounts', 'PendingReviews', 'Places', 'PlacesSummary', 'HoursSummary', 'Applications', 'Doctors', 'DoctorsSummary'] })
   .injectEndpoints({
     endpoints: build => ({
 
@@ -89,13 +97,14 @@ const adminApi = api
       // The numbers on the tabs
       adminCounts: build.query({
         async queryFn() {
-          const [reviews, places, hours, applications] = await Promise.all([
+          const [reviews, places, hours, applications, doctors] = await Promise.all([
             supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('proof_status', 'pending'),
             needsALook(supabase.from('places_staging').select('id', { count: 'exact', head: true })),
             needsHours(supabase.from('hospitals').select('id', { count: 'exact', head: true })),
             supabase.from('doctor_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+            supabase.from('doctors_staging').select('id', { count: 'exact', head: true }).eq('status', 'pending').or('review_note.is.null,review_note.like."held:*"'),
           ]);
-          return { data: { reviews: reviews.count ?? 0, places: places.count ?? 0, hours: hours.count ?? 0, applications: applications.count ?? 0 } };
+          return { data: { reviews: reviews.count ?? 0, places: places.count ?? 0, hours: hours.count ?? 0, applications: applications.count ?? 0, doctors: doctors.count ?? 0 } };
         },
         providesTags: ['AdminCounts'],
       }),
@@ -180,6 +189,49 @@ const adminApi = api
       autoReview: build.mutation({
         queryFn: ({ city, dryRun }) => run(supabase.rpc('auto_review_places', { city_slug: city, dry_run: dryRun })),
         invalidatesTags: (_r, error, { dryRun }) => error || dryRun ? [] : ['Places', 'PlacesSummary', 'AdminCounts'],
+      }),
+
+      // ---------- Imported doctors ----------
+
+      doctorsSummary: build.query({
+        queryFn: args => countOf(doctorsQuery(args, 'id', { count: 'exact', head: true })),
+        providesTags: ['DoctorsSummary'],
+      }),
+
+      doctorsPages: build.infiniteQuery({
+        infiniteQueryOptions: pagedOptions,
+        async queryFn({ queryArg, pageParam }) {
+          const order = queryArg.view === 'auto' ? ['reviewed_at', { ascending: false }] : ['confidence', { ascending: false }];
+          const { data, error } = await doctorsQuery(queryArg, '*').order(...order).order('id').range(pageParam, pageParam + PLACES_PAGE - 1);
+          if (error) return { error: toError(error) };
+          // Where they work, and the existing profile they may duplicate
+          const placeIds = [...new Set(data.map(d => d.place_id))], matchIds = [...new Set(data.map(d => d.match_id).filter(Boolean))];
+          const [places, matches] = await Promise.all([
+            placeIds.length ? supabase.from('hospitals').select('id, name, address').in('id', placeIds) : { data: [] },
+            matchIds.length ? supabase.from('doctors').select('id, name, hospital').in('id', matchIds) : { data: [] },
+          ]);
+          const placeOf = new Map((places.data ?? []).map(p => [p.id, p])), matchOf = new Map((matches.data ?? []).map(d => [d.id, d]));
+          return { data: { rows: data.map(d => ({ ...d, place: placeOf.get(d.place_id) ?? null, match: matchOf.get(d.match_id) ?? null })), full: data.length === PLACES_PAGE } };
+        },
+        providesTags: ['Doctors'],
+      }),
+
+      // decision: approve (publish), merge (into the existing profile) or reject
+      reviewDoctor: build.mutation({
+        queryFn: ({ id, decision }) => run(supabase.rpc('review_doctors', { doctor_ids: [id], decision })),
+        onQueryStarted: removeRowOnSuccess('doctorsPages'),
+        invalidatesTags: (_r, error) => error ? [] : ['DoctorsSummary', 'AdminCounts'],
+      }),
+
+      unpublishDoctor: build.mutation({
+        queryFn: ({ publishedId }) => run(supabase.rpc('unpublish_doctor', { doctor_id: publishedId })),
+        onQueryStarted: removeRowOnSuccess('doctorsPages'),
+        invalidatesTags: (_r, error) => error ? [] : ['DoctorsSummary', 'AdminCounts'],
+      }),
+
+      autoReviewDoctors: build.mutation({
+        queryFn: ({ city, dryRun }) => run(supabase.rpc('auto_review_doctors', { city_slug: city, dry_run: dryRun })),
+        invalidatesTags: (_r, error, { dryRun }) => error || dryRun ? [] : ['Doctors', 'DoctorsSummary', 'AdminCounts'],
       }),
 
       // ---------- Hours ----------
@@ -277,6 +329,11 @@ export const {
   useDismissSuggestionMutation,
   useRemoveAutoHoursMutation,
   useSaveDetailsMutation,
+  useDoctorsSummaryQuery,
+  useDoctorsPagesInfiniteQuery,
+  useReviewDoctorMutation,
+  useUnpublishDoctorMutation,
+  useAutoReviewDoctorsMutation,
   useApplicationsQuery,
   useDecideApplicationMutation,
 } = adminApi;

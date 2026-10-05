@@ -7,7 +7,7 @@ import { getStatus } from '../../lib/hours';
 import { t } from '../../i18n';
 import { directionsUrl } from '../../lib/origin';
 import { DETAILS, KINDS, kindOf, placeDestination, placeStatus, telHref } from './kinds';
-import { specialtyText } from './filtering';
+import { specialtyLabels } from '../../lib/specialties';
 
 const MAPPLS_KEY = import.meta.env.VITE_MAPPLS_KEY;
 const MAPPLS_SDK_URLS = [
@@ -96,7 +96,7 @@ export function doctorPopupHtml(d) {
         <div class="w-10 h-10 rounded-[11px] shrink-0 flex items-center justify-center text-[14px] font-serif text-white" style="background:${escapeHtml(d.avatar_bg)};">${escapeHtml(d.initials)}</div>
         <div class="min-w-0">
           <div class="font-serif text-[16px] leading-tight text-[#1E293B] truncate">${escapeHtml(d.name)}</div>
-          <div class="text-[12px] text-[#D0423A] font-medium truncate">${escapeHtml(specialtyText(d))}</div>
+          <div class="text-[12px] text-[#D0423A] font-medium truncate">${escapeHtml(specialtyLabels(t, d))}</div>
         </div>
       </div>
       <div class="flex items-center flex-wrap gap-1.5 mt-2.5 text-[11px]">

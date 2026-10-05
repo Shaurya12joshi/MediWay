@@ -1,4 +1,5 @@
 import { getStatus } from '../../lib/hours';
+import { treats } from '../../lib/specialties';
 import { KINDS, kindOf } from './kinds';
 
 // Which rows a set of filters shows. The database already applied type, specialty, walk-ins,
@@ -25,7 +26,7 @@ function matchesSearchPlace(h, q) {
 export function matchesDoctor(d, filters, query) {
   const q = query.trim().toLowerCase();
   if (!showsDoctors(filters))                                                   return false;
-  if (filters.specialty !== 'all' && !d.specialty?.includes(filters.specialty)) return false;
+  if (filters.specialty !== 'all' && !treats(d, filters.specialty))             return false;
   if (filters.language  !== 'all' && !d.languages?.includes(filters.language))  return false;
   if (d.distance_km > filters.distance)                                         return false;
   if (d.rating < filters.rating)                                                return false;
@@ -56,7 +57,8 @@ export function matchesPlace(h, filters, query) {
 
 export function sortDoctors(arr, by) {
   return [...arr].sort((a, b) => {
-    if (by === 'rating')   return b.rating - a.rating;
+    // Profiles nobody has rated yet (e.g. imported from a hospital's website) go after the rated ones
+    if (by === 'rating')   return (b.rating ?? -1) - (a.rating ?? -1);
     if (by === 'distance') return a.distance_km - b.distance_km;
     if (by === 'name')     return a.name.localeCompare(b.name);
     return 0;
