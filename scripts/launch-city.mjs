@@ -154,9 +154,11 @@ async function measure(city) {
     suggestions: places.filter(p => p.suggested_schedule || p.suggested_er24 != null).length,
     // Doctors behind each specialty chip (a condition chip counts the specialists who treat it)
     ...(await (async () => {
-      const doctors = await anon.all(`doctors?select=id,specialty&city=eq.${encodeURIComponent(city.name)}`).catch(() => [])
+      const doctors = await anon.all(`doctors?select=id,specialty,schedule,place_id&city=eq.${encodeURIComponent(city.name)}`).catch(() => [])
+      const placeHours = new Set(places.filter(p => Array.isArray(p.schedule) && p.schedule.length).map(p => p.id))
       const chips = Object.fromEntries(SPECIALTY_CHIPS.map(c => [c, doctors.filter(d => specialtiesFor(c).some(s => d.specialty?.includes(s))).length]))
-      return { doctors: doctors.length, chips }
+      const own = doctors.filter(d => d.schedule?.length).length
+      return { doctors: doctors.length, chips, doctorsOwnHours: own, doctorsPlaceHours: doctors.filter(d => !d.schedule?.length && placeHours.has(d.place_id)).length }
     })()),
   }
 }
@@ -223,6 +225,13 @@ function checklist(city, r) {
       ok: Object.values(r.chips).every(n => n >= MIN_DOCTORS_PER_CHIP),
       warning: true,
       fix: `node scripts/import-doctors.mjs --city ${slug} --push, then Admin -> Imported doctors -> ⚡ Auto-review. Share mediway.in/join with clinics near tourists.`,
+    },
+    {
+      label: `Doctors with hours: ${r.doctorsOwnHours} of ${r.doctors} their own (${pct(r.doctorsOwnHours, r.doctors)}), ` +
+        `${r.doctorsPlaceHours} more show their hospital's or clinic's hours`,
+      ok: r.doctors > 0 && (r.doctorsOwnHours + r.doctorsPlaceHours) / r.doctors >= 0.8,
+      warning: true,
+      fix: `Admin -> Imported doctors -> No hours yet: call and ask when they see patients (${r.doctors - r.doctorsOwnHours} without their own)`,
     },
     {
       label: `Suggestions waiting in Admin -> Hours: ${r.suggestions}`,

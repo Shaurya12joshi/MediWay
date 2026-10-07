@@ -39,5 +39,5 @@ export default function CityPage() {
   }, [match, preset, dispatch]);
 
   if (!preset || (cities.data && !match)) return <NotFound />;
-  return <SearchPage title={`${t(preset.label)} · ${match?.name ?? ''} — MediWay`} />;
+  return <SearchPage title={`${t(preset.label)} · ${match?.name ?? ''} | MediWay`} />;
 }

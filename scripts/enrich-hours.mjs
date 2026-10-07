@@ -91,7 +91,7 @@ function fail(msg) { console.error(`✗ ${msg}`); process.exit(1) }
 // ---------- Main ----------
 
 async function main() {
-  const places = loadImportedPlaces(slug)
+  const places = await loadImportedPlaces(slug)
   const city = await markWhatsMissing(places)
   const publish = [] // rows for set_place_hours
   const suggest = [] // rows for suggest_place_hours
@@ -215,7 +215,18 @@ async function markWhatsMissing(places) {
 
 // ---------- Places from the import files ----------
 
-function loadImportedPlaces(slug) {
+// The import queue (places_staging) when the service key can read it, which also covers imports made with
+// --push (they write no files); otherwise the newest import files
+async function loadImportedPlaces(slug) {
+  const service = supabaseRest(env, { service: true })
+  if (service) {
+    try {
+      const rows = await service.all(`places_staging?select=source_key,kind,name,address,lat,lng,phone,website,schedule,status&city=eq.${encodeURIComponent(slug)}&status=in.(pending,approved,merged)&order=id`)
+      if (rows.length) { console.log(`  (${rows.length} places from the import queue)`); return rows }
+    } catch (err) {
+      console.log(`  (Couldn't read the import queue: ${err.message.slice(0, 100)}. Using the import files.)`)
+    }
+  }
   const files = readdirSync(IMPORTS).filter(f => new RegExp(`^${slug}-\\d{4}-\\d{2}-\\d{2}(\\.part\\d+-of-\\d+)?\\.sql$`).test(f))
   if (!files.length) fail(`No import files for "${slug}" in supabase/imports. Run scripts/import-places.mjs --city ${slug} first.`)
   const latest = files.map(f => f.slice(slug.length + 1, slug.length + 11)).sort().at(-1)

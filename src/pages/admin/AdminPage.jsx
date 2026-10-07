@@ -54,7 +54,7 @@ function AdminTabs() {
 }
 
 export default function AdminPage() {
-  useTitle('MediWay — Admin');
+  useTitle('Admin · MediWay');
   const { ready, user } = useSelector(s => s.auth);
   const isAdmin = useIsAdminQuery(user ? user.id : skipToken);
 

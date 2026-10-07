@@ -35,8 +35,82 @@
   to = "/admin"
   status = 301
 
-# Single-page app: React Router handles every other path
+# Single-page app: the app's own routes are served by React Router (status 200). Pre-rendered pages
+# (scripts/prerender.mjs, e.g. /varanasi/hospitals.html, /doctor/12.html) are real files and win over these.
+# Keep this list in step with src/router.jsx.
+
+[[redirects]]
+  from = "/search"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/profile"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/emergency"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/join"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/review"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/auth"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/doctor/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:city/hospitals"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:city/clinics"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:city/pharmacies"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:city/labs"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:city/doctors"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/:city/emergency"
+  to = "/index.html"
+  status = 200
+
+# Everything else: the app's "Page not found" page, with a real 404 status for browsers and search engines
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200
+  status = 404

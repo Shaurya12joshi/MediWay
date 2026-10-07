@@ -24,7 +24,7 @@ function ProofCard({ review: r }) {
     const { error } = await decide({ id: r.id, approve });
     if (error) {
       console.error(error);
-      dispatch(showToast('Something went wrong — try again'));
+      dispatch(showToast('Something went wrong. Try again'));
       return;
     }
     dispatch(showToast(approve ? 'Marked as verified' : 'Rejected'));
@@ -47,7 +47,7 @@ function ProofCard({ review: r }) {
         {r.could_improve?.length > 0 && <div className="text-[12px] text-[#3F3F46] mb-[4px]"><strong>Could improve:</strong> {r.could_improve.join(', ')}</div>}
         <div className="text-[12px] text-[#3F3F46] mb-[14px]"><strong>Recommends:</strong> {r.recommend ? 'Yes' : 'No'}</div>
         <div className="flex gap-[8px] flex-wrap">
-          <button type="button" disabled={busy} onClick={() => act(true)} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>✓ Approve<span className="hidden sm:inline"> — mark verified</span></button>
+          <button type="button" disabled={busy} onClick={() => act(true)} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>✓ Approve<span className="hidden sm:inline"> and mark verified</span></button>
           <button type="button" disabled={busy} onClick={() => act(false)} className={`${BTN_PLAIN} px-[16px] py-[9px] text-[13px] hover:border-[#D0423A] hover:text-[#D0423A]`}>Reject</button>
         </div>
       </div>

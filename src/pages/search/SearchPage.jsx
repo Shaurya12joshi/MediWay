@@ -28,7 +28,7 @@ const VIEW_OFF = `${VIEW_BTN} bg-transparent text-[#64748B]`;
 // `title`: the city pages (/varanasi/hospitals) name what they list
 export default function SearchPage({ title }) {
   const t = useT();
-  useTitle(title ?? `MediWay — ${t('search.title')}`);
+  useTitle(title ?? `${t('search.title')} · MediWay`);
   const dispatch = useDispatch();
   const [params] = useSearchParams();
   const { origin, filters, query, sortBy, view } = useSelector(s => s.search);

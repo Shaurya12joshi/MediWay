@@ -36,7 +36,7 @@ function timeAgo(t, at) {
 // Online it refreshes the list and saves it on the phone; offline it shows what was saved.
 export default function Emergency() {
   const t = useT();
-  useTitle(`MediWay — ${t('em.pageTitle')}`);
+  useTitle(`${t('em.pageTitle')} · MediWay`);
   const online = useOnline();
   const savedOrigin = useSelector(s => s.search.origin);
 

@@ -79,7 +79,7 @@ function ReviewForm({ subject }) {
     e.target.value = '';
     if (!file) return;
     if (file.size > MAX_PROOF_BYTES) {
-      dispatch(showToast('Photo is too large — please use one under 8MB'));
+      dispatch(showToast('Photo is too large. Please use one under 8MB'));
       return;
     }
     setProof({ file, url: URL.createObjectURL(file) });
@@ -151,13 +151,13 @@ function ReviewForm({ subject }) {
 
         <div>
           <label className={`${LABEL} mb-[3px]`}>What stood out?</label>
-          <p className="text-[12px] text-faint mb-[12px]">Tap all that apply — optional</p>
+          <p className="text-[12px] text-faint mb-[12px]">Tap all that apply (optional)</p>
           <ChipPicker options={STOOD_OUT_OPTIONS} selected={stoodOut} onChange={setStoodOut} onClass={CHIP_GOOD} />
         </div>
 
         <div>
           <label className={`${LABEL} mb-[3px]`}>What could be improved?</label>
-          <p className="text-[12px] text-faint mb-[12px]">Tap all that apply — optional</p>
+          <p className="text-[12px] text-faint mb-[12px]">Tap all that apply (optional)</p>
           <ChipPicker options={IMPROVE_OPTIONS} selected={couldImprove} onChange={setCouldImprove} onClass={CHIP_IMPROVE} />
         </div>
 
@@ -186,7 +186,7 @@ function ReviewForm({ subject }) {
 
         <div>
           <label className={`${LABEL} mb-[3px]`}>Proof of visit</label>
-          <p className="text-[12px] text-faint mb-[12px]">Upload a photo of a prescription or bill to get a "Verified visit" badge on your review — optional, reviewed by our team, never shown publicly.</p>
+          <p className="text-[12px] text-faint mb-[12px]">Upload a photo of a prescription or bill to get a "Verified visit" badge on your review. Optional, checked by our team, never shown publicly.</p>
           {proof ? (
             <div className="mt-[10px]">
               <img src={proof.url} alt="Proof of visit" className="rounded-[10px] max-h-[160px] object-cover border border-border" />
@@ -211,7 +211,7 @@ function ReviewForm({ subject }) {
 }
 
 export default function Review() {
-  useTitle('MediWay — Write a Review');
+  useTitle('Write a review · MediWay');
   const [params] = useSearchParams();
   const id = params.get('id');
   const placeId = params.get('place');

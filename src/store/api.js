@@ -61,6 +61,15 @@ export const api = createApi({
         const error = docs.error || facilities.error;
         if (error) return { error: toError(error) };
 
+        // The hours of the hospital or clinic each doctor works at, for doctors whose own hours aren't known
+        const doctorsFound = docs.data ?? [];
+        const placeIds = [...new Set(doctorsFound.filter(d => d.place_id && !d.schedule?.length).map(d => d.place_id))];
+        if (placeIds.length) {
+          const { data: placeRows } = await supabase.from('hospitals').select('id, schedule').in('id', placeIds);
+          const hoursOf = new Map((placeRows ?? []).map(p => [p.id, p.schedule]));
+          for (const d of doctorsFound) if (hoursOf.get(d.place_id)?.length) d.place_schedule = hoursOf.get(d.place_id);
+        }
+
         // Visitors' ratings for these places (20261004_tourist_features.sql); missing ratings never block the search
         const placesFound = facilities.data ?? [];
         if (placesFound.length) {
@@ -110,8 +119,14 @@ export const api = createApi({
       queryFn: id => run(supabase.from('hospitals').select('id, name, address, kind, city').eq('id', id).single()),
     }),
 
+    // With their hospital or clinic's hours (place_schedule), for when the doctor's own aren't known
     getDoctor: build.query({
-      queryFn: id => run(supabase.from('doctors').select('*').eq('id', id).single()),
+      async queryFn(id) {
+        const result = await run(supabase.from('doctors').select('*').eq('id', id).single());
+        if (result.error || !result.data.place_id || result.data.schedule?.length) return result;
+        const { data: place } = await supabase.from('hospitals').select('schedule').eq('id', result.data.place_id).maybeSingle();
+        return { data: { ...result.data, place_schedule: place?.schedule ?? null } };
+      },
     }),
 
     getReviews: build.query({

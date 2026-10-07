@@ -60,7 +60,7 @@ function StagedCard({ place: p, listArgs }) {
 
   async function decide(decision) {
     const { error } = await review({ id: p.id, decision, listArgs });
-    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong — try again')); return; }
+    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong. Try again')); return; }
     dispatch(showToast(DONE_MESSAGE[decision]));
   }
 
@@ -91,7 +91,7 @@ function PublishedCard({ place: p, listArgs }) {
 
   async function remove() {
     const { error } = await unpublish({ id: p.id, publishedId: p.published_id, listArgs });
-    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong — try again')); return; }
+    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong. Try again')); return; }
     dispatch(showToast('Removed from the site'));
   }
 
@@ -129,7 +129,7 @@ export default function PlacesTab({ state, setState }) {
     const cityName = cities.data.find(c => c.slug === city)?.name ?? city;
     setAutoStatus('Checking…');
     const { data: preview, error } = await autoReview({ city, dryRun: true });
-    if (error) { console.error(error); toast(error.message || 'Auto-review failed — have all the migrations been run?'); setAutoStatus(null); return; }
+    if (error) { console.error(error); toast(error.message || 'Auto-review failed. Have all the migrations been run?'); setAutoStatus(null); return; }
 
     const outcomes = Object.entries(preview.held ?? {});
     const held = outcomes.filter(([k]) => k.startsWith('held')).reduce((n, [, v]) => n + v, 0);

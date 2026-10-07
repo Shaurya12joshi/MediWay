@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { useSelector } from 'react-redux';
 import { useGetDoctorQuery, useGetReviewsQuery, useVoteHelpfulMutation } from '../store/api';
-import { getStatus, scheduleText } from '../lib/hours';
+import { doctorHours } from '../lib/hours';
 import { distanceKm, directionsUrl } from '../lib/origin';
 import AuthButton from '../components/AuthButton';
 import { BackIcon, CheckIcon, ClockIcon, DirectionsIcon, PenIcon, PinIcon, ThumbIcon } from '../components/icons';
@@ -124,12 +124,12 @@ function DoctorProfile({ doctor: d, reviews }) {
   }
   const totalBd = Object.values(bd).reduce((a, b) => a + b, 0) || 1;
 
-  const status = getStatus(d);
-  const timings = scheduleText(d);
+  const hours = doctorHours(d), status = hours.status;
+  const timings = hours.own ? hours.text : `${hours.text} · ${t('hours.doctorNotListed')}`;
   const specialtyText = specialtyLabels(t, d);
   const languages = d.languages || [];
   const firstName = (d.name || '').split(' ').slice(1).join(' ');
-  const displayRating = total ? avg : '—';
+  const displayRating = total ? avg : '–';
   // Measured from the search page's origin: the detected position, or the centre of the city browsed
   const distance = origin && Number.isFinite(+d.lat) && Number.isFinite(+d.lng)
     ? Math.round(distanceKm(origin.lat, origin.lng, +d.lat, +d.lng) * 10) / 10 : null;
@@ -357,7 +357,7 @@ export default function Profile() {
   const id = useParams().id ?? params.get('id');
   const doctor = useGetDoctorQuery(id, { skip: !id });
   const reviews = useGetReviewsQuery(id, { skip: !id });
-  useTitle(doctor.data ? `MediWay — ${doctor.data.name}` : `MediWay — ${t('profile.title')}`);
+  useTitle(doctor.data ? `${doctor.data.name} · MediWay` : `${t('profile.title')} · MediWay`);
 
   let content;
   if (!id) content = <NotFoundMessage title={t('profile.noDoctor')} linkText={t('common.backToResultsArrow')} />;

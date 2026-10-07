@@ -4,15 +4,16 @@ import { skipToken } from '@reduxjs/toolkit/query/react';
 import { showToast } from '../../store/toastSlice';
 import { scheduleText } from '../../lib/hours';
 import {
-  useAdminCitiesQuery, useAutoReviewDoctorsMutation, useDoctorsPagesInfiniteQuery, useDoctorsSummaryQuery,
-  useReviewDoctorMutation, useUnpublishDoctorMutation,
+  useAdminCitiesQuery, useAutoReviewDoctorsMutation, useDoctorHoursPagesInfiniteQuery, useDoctorHoursSummaryQuery,
+  useDoctorsPagesInfiniteQuery, useDoctorsSummaryQuery, useReviewDoctorMutation, useSaveDoctorHoursMutation, useUnpublishDoctorMutation,
 } from './adminApi';
+import ScheduleEditor, { DOCTOR_PRESETS, EMPTY_HOURS, readSchedule } from './ScheduleEditor';
 import { BTN_APPROVE, BTN_DARK, BTN_PLAIN, Empty, LOAD_MORE, SELECT, TabLoading, fmtShortDate } from './shared';
 
 // Doctors read from hospital and clinic websites by scripts/import-doctors.mjs. "Auto-review" applies the rules
 // in auto_review_doctors(); people only see what's held, and can take anything published back off the site.
 
-const VIEWS = [['review', 'Needs a look'], ['auto', 'Auto-published']];
+const VIEWS = [['review', 'Needs a look'], ['auto', 'Auto-published'], ['hours', 'No hours yet']];
 const DONE_MESSAGE = { approve: 'Published', merge: 'Added to the existing profile', reject: 'Rejected' };
 
 function summaryText(view, count) {
@@ -20,6 +21,7 @@ function summaryText(view, count) {
   return {
     review: count ? `${count} need a look · the rules weren't sure about these` : 'Nothing needs you. Run ⚡ Auto-review after each import.',
     auto: count ? `${count} published automatically · remove any that look wrong` : 'Nothing published automatically yet.',
+    hours: count ? `${count} live doctors with no OPD hours · call and ask when they see patients` : 'Every doctor here has hours.',
   }[view];
 }
 
@@ -57,7 +59,7 @@ function StagedCard({ doctor: d, listArgs }) {
 
   async function decide(decision) {
     const { error } = await review({ id: d.id, decision, listArgs });
-    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong — try again')); return; }
+    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong. Try again')); return; }
     dispatch(showToast(DONE_MESSAGE[decision]));
   }
 
@@ -87,7 +89,7 @@ function PublishedCard({ doctor: d, listArgs }) {
 
   async function remove() {
     const { error } = await unpublish({ id: d.id, publishedId: d.published_id, listArgs });
-    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong — try again')); return; }
+    if (error) { console.error(error); dispatch(showToast(error.message || 'Something went wrong. Try again')); return; }
     dispatch(showToast('Removed from the site'));
   }
 
@@ -102,14 +104,74 @@ function PublishedCard({ doctor: d, listArgs }) {
   );
 }
 
+// A live doctor with no hours: call, enter the OPD days and times
+function DoctorHoursCard({ doctor: d, listArgs, onSkip }) {
+  const dispatch = useDispatch();
+  const [save, { isLoading: busy }] = useSaveDoctorHoursMutation();
+  const [hours, setHours] = useState(EMPTY_HOURS);
+  const [error, setError] = useState('');
+  const tried = d.hours_source === 'unreachable' && d.hours_checked_at ? `No answer on ${fmtShortDate(d.hours_checked_at)}` : '';
+
+  async function submit(outcome) {
+    setError('');
+    let schedule = null;
+    if (outcome === 'verified') {
+      const read = readSchedule(hours);
+      if (read.error || !read.schedule) return setError(read.error || 'Pick the days and times they see patients.');
+      schedule = read.schedule;
+    }
+    const { error: e } = await save({ id: d.id, outcome, schedule, listArgs });
+    if (e) { console.error(e); setError(e.message || 'Something went wrong. Try again'); return; }
+    dispatch(showToast(outcome === 'verified' ? `Saved ${d.name}'s hours` : 'Noted. They’ll come back later in the queue'));
+  }
+
+  return (
+    <div className="bg-white border border-[#E6E6E1] rounded-[14px] p-[14px] sm:p-[18px]">
+      <div className="flex items-start justify-between gap-[10px] flex-wrap">
+        <div className="min-w-0">
+          <div className="flex items-center gap-[8px] flex-wrap mb-[3px]">
+            {(d.specialty ?? []).map(s => <span key={s} className="text-[10px] font-bold uppercase tracking-[.08em] px-[7px] py-[2px] rounded-[5px] text-[#D0423A] bg-[#FDECEA]">{s}</span>)}
+            {tried && <span className="text-[11px] text-[#B45309]">{tried}</span>}
+          </div>
+          <div className="font-serif text-[17px] text-[#1E293B] break-words">{d.name}</div>
+          <div className="text-[12px] text-[#64748B] mt-[2px] break-words">
+            {d.hospital}{d.hospital_address ? `, ${d.hospital_address}` : ''}
+            {d.source_url && <> · <a href={d.source_url} target="_blank" rel="noopener noreferrer" className="text-[#D0423A] underline">their page</a></>}
+            {' · '}<a href={`/doctor/${d.id}`} target="_blank" rel="noopener noreferrer" className="text-[#D0423A] underline">profile</a>
+          </div>
+        </div>
+        {d.phone
+          ? <a href={`tel:${d.phone.replace(/[^\d+]/g, '')}`} className="shrink-0 flex items-center gap-[7px] bg-[#1E293B] hover:bg-black text-white no-underline px-[14px] py-[9px] rounded-[10px] text-[14px] font-semibold">📞 {d.phone}</a>
+          : <span className="text-[12px] text-[#94A3B8]">No phone</span>}
+      </div>
+      <div className="mt-[14px] pt-[14px] border-t border-[#F0EFEA]">
+        <p className="text-[12px] text-[#64748B] mb-[8px]">“Which days and times does {d.name} see patients?”</p>
+        <ScheduleEditor value={hours} onChange={setHours} presets={DOCTOR_PRESETS} />
+      </div>
+      <div className="mt-[14px] flex flex-wrap gap-[8px] items-center">
+        <button type="button" disabled={busy} onClick={() => submit('verified')} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>Save</button>
+        <button type="button" disabled={busy} onClick={() => submit('unreachable')} className={`${BTN_PLAIN} px-[14px] py-[9px] text-[13px] hover:border-[#B45309] hover:text-[#B45309]`}>No answer</button>
+        <button type="button" disabled={busy} onClick={() => onSkip(d.id)} className="bg-transparent border-none text-[13px] text-[#94A3B8] cursor-pointer font-sans hover:text-[#1E293B]">Skip</button>
+        {error && <span role="alert" className="text-[12px] text-[#D0423A]">{error}</span>}
+      </div>
+    </div>
+  );
+}
+
 // state / setState come from the admin page, so the city and view survive switching tabs
 export default function DoctorsTab({ state, setState }) {
   const dispatch = useDispatch();
   const cities = useAdminCitiesQuery();
   const city = state.city ?? cities.data?.[0]?.slug;
+  const cityName = cities.data?.find(c => c.slug === city)?.name;
+  const hoursView = state.view === 'hours';
   const listArgs = city ? { city, view: state.view } : skipToken;
-  const summary = useDoctorsSummaryQuery(listArgs);
-  const pages = useDoctorsPagesInfiniteQuery(listArgs);
+  const hoursArgs = cityName ? { cityName } : skipToken;
+  const summary = useDoctorsSummaryQuery(hoursView ? skipToken : listArgs);
+  const pages = useDoctorsPagesInfiniteQuery(hoursView ? skipToken : listArgs);
+  const hoursSummary = useDoctorHoursSummaryQuery(hoursView ? hoursArgs : skipToken);
+  const hoursPages = useDoctorHoursPagesInfiniteQuery(hoursView ? hoursArgs : skipToken);
+  const [skipped, setSkipped] = useState([]);
   const [autoReview] = useAutoReviewDoctorsMutation();
   const [autoStatus, setAutoStatus] = useState(null);
 
@@ -118,7 +180,8 @@ export default function DoctorsTab({ state, setState }) {
 
   const toast = message => dispatch(showToast(message));
   const update = patch => setState(s => ({ ...s, ...patch }));
-  const rows = pages.data?.pages.flatMap(p => p.rows) ?? [];
+  const list = hoursView ? hoursPages : pages;
+  const rows = (list.data?.pages.flatMap(p => p.rows) ?? []).filter(d => !hoursView || !skipped.includes(d.id));
 
   // Preview what the rules would do, confirm, then do it
   async function runAutoReview() {
@@ -145,7 +208,7 @@ export default function DoctorsTab({ state, setState }) {
       <div className="flex flex-wrap items-end justify-between gap-[12px] mb-[16px]">
         <div>
           <h1 className="font-serif text-[24px]">Imported doctors</h1>
-          <p className="text-[13px] text-[#94A3B8] mt-[3px]">{city ? summaryText(state.view, summary.data) : 'Add a city first.'}</p>
+          <p className="text-[13px] text-[#94A3B8] mt-[3px]">{city ? summaryText(state.view, hoursView ? hoursSummary.data : summary.data) : 'Add a city first.'}</p>
         </div>
         <button type="button" disabled={Boolean(autoStatus) || !city} onClick={runAutoReview} className={`${BTN_DARK} px-[14px] py-[9px] text-[13px]`}>
           {autoStatus || '⚡ Auto-review'}
@@ -166,19 +229,19 @@ export default function DoctorsTab({ state, setState }) {
         <span className="text-[12px] text-[#94A3B8]">Import more with <code>node scripts/import-doctors.mjs --city {city}</code></span>
       </div>
 
-      {city && (pages.isLoading ? <TabLoading /> : pages.isError
+      {city && (list.isLoading ? <TabLoading /> : list.isError
         ? <p className="text-[13px] text-[#D0423A]">Couldn't load doctors. Has 20261006_doctor_import.sql been run?</p>
-        : rows.length === 0 && !pages.hasNextPage
-          ? <Empty title="Nothing here">No imported doctors for this view.</Empty>
+        : rows.length === 0 && !list.hasNextPage
+          ? <Empty title="Nothing here">{hoursView ? 'Every doctor in this city has hours.' : 'No imported doctors for this view.'}</Empty>
           : <div className="flex flex-col gap-[10px]">
-              {rows.map(d => state.view === 'auto'
-                ? <PublishedCard key={d.id} doctor={d} listArgs={listArgs} />
+              {rows.map(d => hoursView ? <DoctorHoursCard key={d.id} doctor={d} listArgs={hoursArgs} onSkip={id => setSkipped(s => [...s, id])} />
+                : state.view === 'auto' ? <PublishedCard key={d.id} doctor={d} listArgs={listArgs} />
                 : <StagedCard key={d.id} doctor={d} listArgs={listArgs} />)}
             </div>)}
 
-      {pages.hasNextPage && (
-        <button type="button" disabled={pages.isFetchingNextPage} onClick={() => pages.fetchNextPage()} className={LOAD_MORE}>
-          {pages.isFetchingNextPage ? 'Loading…' : 'Load more'}
+      {list.hasNextPage && (
+        <button type="button" disabled={list.isFetchingNextPage} onClick={() => list.fetchNextPage()} className={LOAD_MORE}>
+          {list.isFetchingNextPage ? 'Loading…' : 'Load more'}
         </button>
       )}
     </>

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { useT } from '../../i18n';
-import { getStatus, scheduleText } from '../../lib/hours';
+import { doctorHours } from '../../lib/hours';
 import { directionsUrl } from '../../lib/origin';
 import { rememberVisit } from '../../lib/visits';
 import { showToast } from '../../store/toastSlice';
@@ -81,9 +81,9 @@ function DoctorCard({ doctor: d, anim }) {
   const t = useT();
   const dispatch = useDispatch();
   const saved = useSelector(s => s.search.saved.includes(d.id));
-  const displayRating = d.rating ?? d.google_rating ?? '—';
+  const displayRating = d.rating ?? d.google_rating ?? '–';
   const displayReviews = d.reviews ?? d.google_reviews ?? 0;
-  const status = getStatus(d);
+  const hours = doctorHours(d), status = hours.status;
 
   function toggleBookmark() {
     dispatch(toggleSaved(d.id));
@@ -118,7 +118,7 @@ function DoctorCard({ doctor: d, anim }) {
         </p>
         <p className="text-[12px] text-[#94A3B8] mb-2.5 flex items-center gap-[5px]">
           <ClockIcon size={11} />
-          {scheduleText(d)}
+          {hours.text}{!hours.own && <span className="text-[#B45309]"> · {t('hours.doctorNotListed')}</span>}
         </p>
         <div className="flex flex-wrap gap-1.5 mb-3">
           <span className={`${TAG} ${status.open ? 'bg-[#F0FDF4] text-[#16A34A]' : 'bg-[#F1F5F9] text-[#64748B]'}`}>

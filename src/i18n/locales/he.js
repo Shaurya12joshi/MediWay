@@ -291,4 +291,11 @@ export default {
   'specialty.Dentist': 'שיניים',
   'profile.fromWebsite': 'המידע לקוח מאתר {place}',
   'profile.sourceLink': 'לעמוד שלהם',
+  'hours.atPlace': 'ב{place}: {hours}',
+  'hours.doctorNotListed': 'שעות הקבלה של הרופא לא ידועות',
+  'nf.title': 'הדף לא נמצא',
+  'nf.text': 'הכתובת הזו לא מובילה לשום מקום ב־MediWay. אם צריך טיפול רפואי, אנחנו עדיין יכולים לעזור.',
+  'nf.search': 'חיפוש טיפול בסביבה',
+  'nf.emergency': 'עזרה בחירום',
+  'nf.home': 'דף הבית',
 }

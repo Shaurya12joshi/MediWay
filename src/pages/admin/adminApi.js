@@ -234,6 +234,36 @@ const adminApi = api
         invalidatesTags: (_r, error, { dryRun }) => error || dryRun ? [] : ['Doctors', 'DoctorsSummary', 'AdminCounts'],
       }),
 
+      // Live doctors with no OPD hours yet: the phone queue (update_doctor_hours, 20261006_doctor_import.sql)
+      doctorHoursSummary: build.query({
+        queryFn: ({ cityName }) => countOf(supabase.from('doctors').select('id', { count: 'exact', head: true })
+          .eq('city', cityName ?? '').or('schedule.is.null,schedule.eq.[]')),
+        providesTags: ['DoctorsSummary'],
+      }),
+
+      doctorHoursPages: build.infiniteQuery({
+        infiniteQueryOptions: pagedOptions,
+        async queryFn({ queryArg, pageParam }) {
+          const page = (columns, ordered) => {
+            let q = supabase.from('doctors').select('id, name, specialty, hospital, hospital_address, phone, website, lat, lng, place_id' + columns)
+              .eq('city', queryArg.cityName ?? '').or('schedule.is.null,schedule.eq.[]');
+            if (ordered) q = q.order('hours_checked_at', { ascending: true, nullsFirst: true }); // nobody tried yet first
+            return q.order('name').range(pageParam, pageParam + HOURS_PAGE - 1);
+          };
+          let { data, error } = await page(', source_url, hours_source, hours_checked_at', true);
+          if (error) ({ data, error } = await page('', false)); // before the migration
+          if (error) return { error: toError(error) };
+          return { data: { rows: data, full: data.length === HOURS_PAGE } };
+        },
+        providesTags: ['Doctors'],
+      }),
+
+      saveDoctorHours: build.mutation({
+        queryFn: ({ id, outcome, schedule }) => run(supabase.rpc('update_doctor_hours', { doctor_id: id, outcome, new_schedule: schedule ?? null })),
+        onQueryStarted: removeRowOnSuccess('doctorHoursPages'),
+        invalidatesTags: (_r, error) => error ? [] : ['DoctorsSummary'],
+      }),
+
       // ---------- Hours ----------
       // scripts/enrich-hours.mjs fills what it can (see 20261003_auto_hours.sql); people handle the rest.
       // Confirming goes through update_place_hours(); confirmed hours are never overwritten by a script.
@@ -334,6 +364,9 @@ export const {
   useReviewDoctorMutation,
   useUnpublishDoctorMutation,
   useAutoReviewDoctorsMutation,
+  useDoctorHoursSummaryQuery,
+  useDoctorHoursPagesInfiniteQuery,
+  useSaveDoctorHoursMutation,
   useApplicationsQuery,
   useDecideApplicationMutation,
 } = adminApi;

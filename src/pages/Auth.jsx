@@ -86,7 +86,7 @@ function SignupPanel({ onSwitch }) {
     setBusy(false);
     if (error) {
       setError(error.code === '23505'
-        ? "That email is already on the waitlist — we'll be in touch soon."
+        ? "That email is already on the waitlist. We'll be in touch soon."
         : 'Something went wrong submitting that. Please try again.');
       return;
     }
@@ -212,7 +212,7 @@ function InviteSetupPanel({ email, onDone }) {
 }
 
 export default function Auth() {
-  useTitle('MediWay — Alpha Access');
+  useTitle('Alpha access · MediWay');
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [tab, setTab] = useState(params.get('tab') === 'signup' ? 'signup' : 'login');

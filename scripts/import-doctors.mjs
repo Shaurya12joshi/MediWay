@@ -5,6 +5,7 @@
 //   node scripts/import-doctors.mjs --city varanasi           reads the sites, writes supabase/imports/doctors-varanasi-<date>.sql
 //   node scripts/import-doctors.mjs --city varanasi --push    stages them directly (needs SUPABASE_SERVICE_ROLE_KEY)
 //   --limit <n>     only the first n sites (nearest to the city's tourist areas come first)
+//   --place <ids>   only these places (hospitals.id, comma-separated), e.g. to re-read one site; prints what it found
 //   --model <id>    Gemini model (default gemini-3.5-flash-lite: plenty for reading a list; needs GEMINI_API_KEY)
 //   --yes           don't ask before using Gemini
 //   --rpm <n>       requests per minute (default 10, safe on the free tier)
@@ -21,9 +22,10 @@ import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { parseRobots, robotsAllows, htmlToText } from './lib/page-hours.mjs'
 import { asciiJson } from './lib/ascii-json.mjs'
-import { ROOT, fetchCity, livePlaces, nearestArea, readEnv, supabaseRest } from './lib/city.mjs'
+import { ROOT, fetchCity, livePlaces, nearestArea, readEnv, sourceKeysOf, supabaseRest } from './lib/city.mjs'
 import { withRetries, confirm, sleep } from './lib/gemini.mjs'
-import { DOCTORS_MODEL, DOCTORS_PROMPT_VERSION, answerOf, doctorExcerpts, doctorsRequest, interpretDoctors } from './lib/ai-doctors.mjs'
+import { DOCTORS_MODEL, DOCTORS_PROMPT_VERSION, answerOf, doctorExcerpts, doctorsRequest, interpretDoctors, interpretFacilityHours } from './lib/ai-doctors.mjs'
+import { toOsmString } from './lib/opening-hours.mjs'
 
 const IMPORTS = join(ROOT, 'supabase', 'imports')
 const USER_AGENT = 'MediWay-doctors/1.0 (+https://github.com/Shaurya12joshi/MEDROUTE)'
@@ -36,6 +38,7 @@ const args = process.argv.slice(2)
 const option = name => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined }
 const slug = option('city')?.toLowerCase()
 const limit = option('limit') ? +option('limit') : Infinity
+const onlyPlaces = option('place')?.split(',').map(x => x.trim())
 const model = option('model') ?? DOCTORS_MODEL
 const rpm = option('rpm') ? +option('rpm') : 10
 const push = args.includes('--push'), assumeYes = args.includes('--yes')
@@ -56,8 +59,9 @@ async function main() {
   if (!city) fail(`No city "${slug}" in the cities table.`)
 
   // Live hospitals and clinics with their own website; a site shared by several places is a chain
-  const places = (await livePlaces(anon, city.name, 'id,kind,name,address,lat,lng,website'))
+  const places = (await livePlaces(anon, city.name, 'id,kind,name,address,lat,lng,website,sources,schedule'))
     .filter(p => ['hospital', 'clinic'].includes(p.kind) && p.website && !NOT_OWN_SITE.test(p.website) && originOf(p.website))
+    .filter(p => !onlyPlaces || onlyPlaces.includes(p.id))
   const byOrigin = new Map()
   for (const p of places) byOrigin.set(originOf(p.website), [...(byOrigin.get(originOf(p.website)) ?? []), p])
   // One request per site; a chain site is read once, for its place nearest to tourists
@@ -86,21 +90,24 @@ async function main() {
   if (!pages.length) return console.log('Nothing to read.')
 
   // 2. Gemini reads them
-  const rows = await readWithGemini(pages, city)
+  const { rows, placeHours } = await readWithGemini(pages, city)
   const bySpecialty = {}
   for (const r of rows) for (const s of r.specialty) bySpecialty[s] = (bySpecialty[s] ?? 0) + 1
   console.log(`  Doctors found: ${rows.length} at ${new Set(rows.map(r => r.place_id)).size} places · ` +
               `${rows.filter(r => r.confidence >= 0.8).length} with the specialty in the page's own words · ` +
               `${rows.filter(r => r.schedule).length} with OPD hours`)
   console.log(`  By specialty: ${Object.entries(bySpecialty).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ')}`)
-  if (!rows.length) return console.log('Nothing to stage.')
+  if (onlyPlaces) for (const r of rows) console.log(`  · ${r.name} (${r.specialty}) ${r.schedule ? `hours: ${JSON.stringify(r.schedule)} ← "${r.hours_evidence}"` : `no hours${r.opd_text ? ` (page says: ${r.opd_text})` : ''}`}`)
+  console.log(`  Hospital and clinic hours found on the way (for places without any): ${placeHours.length}`)
+  if (!rows.length && !placeHours.length) return console.log('Nothing to stage.')
 
   // 3. Into the review queue
   if (push) {
-    console.log(`✓ Staged: ${JSON.stringify(await service.rpc('stage_doctors', { doctors: rows }))}`)
+    if (rows.length) console.log(`✓ Staged: ${JSON.stringify(await service.rpc('stage_doctors', { doctors: rows }))}`)
+    if (placeHours.length) console.log(`✓ Place hours: ${JSON.stringify(await service.rpc('set_place_hours', { updates: placeHours }))}`)
     console.log(`  Next: Admin -> Imported doctors -> ⚡ Auto-review (or node scripts/launch-city.mjs --city ${slug})`)
   } else {
-    console.log(`✓ Wrote ${writeSqlFile(rows)}\n  Run it in Supabase -> SQL Editor (after 20261006_doctor_import.sql), then Admin -> Imported doctors -> ⚡ Auto-review.`)
+    console.log(`✓ Wrote ${writeSqlFile(rows, placeHours)}\n  Run it in Supabase -> SQL Editor (after 20261006_doctor_import.sql), then Admin -> Imported doctors -> ⚡ Auto-review.`)
   }
 }
 
@@ -161,8 +168,15 @@ async function doctorPages(place) {
   return excerpts ? { outcome: 'read', urls: sections.filter(x => !x.doctorPage).map(x => x.url), excerpts, doctorPages: own.length } : { outcome: 'noDoctors' }
 }
 
-async function fetchPage(url, robots) {
+// One retry: small clinic sites often time out once and then answer
+async function fetchPage(url, robots, retry = true) {
   if (!robotsAllows(robots, url)) return { outcome: 'blocked' }
+  const result = await fetchOnce(url)
+  if (result.outcome === 'failed' && retry) { await sleep(2000); return fetchOnce(url) }
+  return result
+}
+
+async function fetchOnce(url) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(20_000) })
     if (!res.ok || !(res.headers.get('content-type') ?? '').includes('html')) return { outcome: 'failed' }
@@ -215,29 +229,40 @@ async function readWithGemini(pages, city) {
 
   // One row per doctor: the same name and specialty on two listings (a hospital listed twice, or two branches)
   // stays with the place nearest to tourists, which comes first
-  const rows = new Map()
+  const rows = new Map(), placeHours = []
   for (const pg of pages) {
     const saved = cache.answers[keyOf(pg)]
     if (!saved) continue
+    // The place's own hours, only where it has none yet (set_place_hours never overwrites confirmed ones either)
+    if (!pg.place.schedule?.length) {
+      const h = interpretFacilityHours(saved, pg.place, pg.excerpts, sourceKeysOf(pg.place)[0])
+      if (h) placeHours.push({ ...h, opening_hours: toOsmString(h.schedule) })
+    }
     for (const r of interpretDoctors(saved, pg.place, city, pg.urls, pg.excerpts)) {
+      // …unless only the later listing has their hours (a doctor's own clinic often does, the hospital not)
       const person = `${r.source_key.split(':').slice(1).join(':')}|${r.specialty[0]}`
-      if (!rows.has(person)) rows.set(person, r)
+      if (!rows.has(person) || (r.schedule && !rows.get(person).schedule)) rows.set(person, r)
     }
   }
-  return [...rows.values()]
+  return { rows: [...rows.values()], placeHours }
 }
 
 // ---------- Output ----------
 
 // Plain ASCII (see lib/ascii-json.mjs), so pasting it into the SQL Editor can't garble names
-function writeSqlFile(rows) {
+function writeSqlFile(rows, placeHours) {
   const file = join(IMPORTS, `doctors-${slug}-${new Date().toISOString().slice(0, 10)}.sql`)
-  const json = asciiJson(rows)
-  if (json.includes('$mediway_doctors$')) fail('Data contains the SQL quote tag; aborting.')
+  const quote = (data, tag) => {
+    const json = asciiJson(data)
+    if (json.includes(`$${tag}$`)) fail('Data contains the SQL quote tag; aborting.')
+    return `$${tag}$${json}$${tag}$::jsonb`
+  }
   writeFileSync(file,
     `-- Doctors read from ${slug}'s hospital and clinic websites by scripts/import-doctors.mjs on ${new Date().toISOString()}\n` +
-    `-- ${rows.length} doctors into the review queue; nothing is published until auto-review or an admin approves them.\n` +
-    `select public.stage_doctors($mediway_doctors$${json}$mediway_doctors$::jsonb);\n`)
+    `-- ${rows.length} doctors into the review queue (nothing is published until auto-review or an admin approves them),\n` +
+    `-- and the hours of ${placeHours.length} hospitals and clinics that had none (never over confirmed hours).\n` +
+    `select\n  ${rows.length ? `public.stage_doctors(${quote(rows, 'mediway_doctors')})` : 'null'} as doctors,\n` +
+    `  ${placeHours.length ? `public.set_place_hours(${quote(placeHours, 'mediway_hours')})` : 'null'} as place_hours;\n`)
   return file.replace(ROOT + '/', '')
 }
 

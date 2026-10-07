@@ -9,7 +9,7 @@ import { BTN_APPROVE, BTN_PLAIN, Empty, TabLoading, fmtShortDate } from './share
 // Check the registration number with the medical council before approving: approval puts the
 // doctor on the map at the listed place picked here.
 
-const yesNo = v => v === true ? 'Yes' : v === false ? 'No' : '—';
+const yesNo = v => v === true ? 'Yes' : v === false ? 'No' : '–';
 
 function Row({ label, children }) {
   if (children == null || children === '') return null;
@@ -31,7 +31,7 @@ function ApplicationCard({ application: a }) {
     setError('');
     if (approve && !place) return setError('Pick the listed place they work at first.');
     const { error } = await decide({ id: a.id, approve, placeId: place?.id });
-    if (error) { console.error(error); setError(error.message || 'Something went wrong — try again'); return; }
+    if (error) { console.error(error); setError(error.message || 'Something went wrong. Try again'); return; }
     dispatch(showToast(approve ? `${a.name} is now listed` : 'Application rejected'));
   }
 
@@ -49,7 +49,7 @@ function ApplicationCard({ application: a }) {
       <Row label="Experience">{a.experience_years != null ? `${a.experience_years} years` : null}</Row>
       <Row label="Gender">{a.gender}</Row>
       <Row label="Languages">{a.languages?.join(', ')}</Row>
-      <Row label="Clinic">{[a.clinic_name, a.clinic_address].filter(Boolean).join(' — ')}</Row>
+      <Row label="Clinic">{[a.clinic_name, a.clinic_address].filter(Boolean).join(', ')}</Row>
       <Row label="City">{a.city}</Row>
       <Row label="Phone">{a.phone && <a href={`tel:${a.phone.replace(/[^\d+]/g, '')}`} className="text-[#D0423A] underline">{a.phone}</a>}</Row>
       <Row label="Email">{a.email && <a href={`mailto:${a.email}`} className="text-[#D0423A] underline">{a.email}</a>}</Row>
@@ -66,7 +66,7 @@ function ApplicationCard({ application: a }) {
       </div>
 
       <div className="mt-[14px] flex gap-[8px] flex-wrap items-center">
-        <button type="button" disabled={busy} onClick={() => act(true)} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>✓ Approve — list this doctor</button>
+        <button type="button" disabled={busy} onClick={() => act(true)} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>✓ Approve and list this doctor</button>
         <button type="button" disabled={busy} onClick={() => act(false)} className={`${BTN_PLAIN} px-[16px] py-[9px] text-[13px] hover:border-[#D0423A] hover:text-[#D0423A]`}>Reject</button>
         {error && <span role="alert" className="text-[12px] text-[#D0423A]">{error}</span>}
       </div>

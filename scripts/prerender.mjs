@@ -182,7 +182,7 @@ async function main() {
           // Places travellers can act on first: 24/7, then with hours, then with a phone
           .sort((a, b) => (b.er24 === true) - (a.er24 === true) || !!b.schedule - !!a.schedule || !!b.phone - !!a.phone);
       const shown = list.slice(0, MAX_LISTED);
-      const title = `${c.title} in ${city.name} — MediWay`;
+      const title = `${c.title} in ${city.name} | MediWay`;
       const description = list.length
         ? `${list.length} ${c.about} in ${place}, with opening hours, phone numbers and directions. Built for travellers: filter by English-speaking staff, card payment and international insurance.`
         : `Find ${c.about} in ${place} on MediWay: opening hours, phone numbers and directions for travellers.`;
@@ -212,7 +212,7 @@ async function main() {
         `${d.languages?.length ? ` Speaks ${d.languages.join(', ')}.` : ''}${d.walk_in ? ' Walk-ins welcome.' : ''} Hours, directions and patient reviews on MediWay.`;
       page({
         path,
-        title: `${d.name}${specialty ? ` — ${specialty}` : ''} in ${city.name} | MediWay`,
+        title: `${d.name}${specialty ? `, ${specialty}` : ''} in ${city.name} | MediWay`,
         description,
         jsonLd: { '@context': 'https://schema.org', ...doctorLd(d) },
         body: `${nav(city)}<h1>${esc(d.name)}</h1>

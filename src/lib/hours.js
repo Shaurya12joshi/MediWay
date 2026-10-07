@@ -92,3 +92,13 @@ export function scheduleText(place) {
     return `${dayStr}: ${g.ranges.join(', ')}`;
   }).join(' · ');
 }
+
+// A doctor's hours: their own OPD hours when known; otherwise the hours of the hospital or clinic they work at,
+// shown as that place's ("At Smile Dental: Mon–Sat …"), never as the doctor's own. own=false marks the fallback.
+export function doctorHours(d) {
+  if (d.schedule?.length || !d.place_schedule?.length) {
+    return { own: true, status: getStatus(d), text: scheduleText(d) };
+  }
+  const place = { schedule: d.place_schedule };
+  return { own: false, status: getStatus(place), text: t('hours.atPlace', { place: d.hospital || '', hours: scheduleText(place) }) };
+}

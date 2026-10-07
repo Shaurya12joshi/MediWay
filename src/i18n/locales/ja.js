@@ -291,4 +291,11 @@ export default {
   'specialty.Dentist': '歯科',
   'profile.fromWebsite': '{place}の公式サイトの情報です',
   'profile.sourceLink': 'ページを見る',
+  'hours.atPlace': '{place}：{hours}',
+  'hours.doctorNotListed': '医師個人の診療時間は不明',
+  'nf.title': 'ページが見つかりません',
+  'nf.text': 'このアドレスはMediWayのどのページにもつながっていません。医療が必要な場合は、こちらからお探しください。',
+  'nf.search': '近くの医療機関を探す',
+  'nf.emergency': '緊急時のヘルプ',
+  'nf.home': 'ホーム',
 }

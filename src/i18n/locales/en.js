@@ -300,4 +300,11 @@ export default {
   'specialty.Dentist': 'Dentist',
   'profile.fromWebsite': 'Listed from {place}’s website',
   'profile.sourceLink': 'See their page',
+  'hours.atPlace': 'At {place}: {hours}',
+  'hours.doctorNotListed': 'doctor\'s own hours not listed',
+  'nf.title': 'Page not found',
+  'nf.text': 'That address doesn\'t lead anywhere on MediWay. If you need care, we can still help.',
+  'nf.search': 'Find care near you',
+  'nf.emergency': 'Emergency help',
+  'nf.home': 'Home',
 }

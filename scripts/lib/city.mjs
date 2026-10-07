@@ -26,7 +26,9 @@ export function supabaseRest(env, { service = false } = {}) {
   if (!env.VITE_SUPABASE_URL || !key) return null
   const headers = { apikey: key, Authorization: `Bearer ${key}` }
   const call = async (path, init = {}) => {
-    const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: { ...headers, 'Content-Type': 'application/json', ...init.headers } })
+    const send = () => fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: { ...headers, 'Content-Type': 'application/json', ...init.headers } })
+    // One retry on a dropped connection ("fetch failed"); every call here is safe to repeat
+    const res = await send().catch(async () => { await new Promise(r => setTimeout(r, 3000)); return send() })
     if (!res.ok) throw Object.assign(new Error(`${path.split('?')[0]}: ${res.status} ${await res.text()}`), { status: res.status })
     return res.status === 204 ? null : res.json()
   }

@@ -3,7 +3,7 @@
 // Under the hood it's a MapLibre-compatible map, so camera methods, GeoJSON layers,
 // markers and popups follow the MapLibre API. Markers and popups take HTML strings.
 
-import { getStatus } from '../../lib/hours';
+import { doctorHours, getStatus } from '../../lib/hours';
 import { t } from '../../i18n';
 import { directionsUrl } from '../../lib/origin';
 import { DETAILS, KINDS, kindOf, placeDestination, placeStatus, telHref } from './kinds';
@@ -34,7 +34,7 @@ export function loadMappls() {
     for (const url of MAPPLS_SDK_URLS) {
       try { await loadScript(url); if (window.mappls?.Map) return window.mappls; } catch { /* try the next auth scheme */ }
     }
-    throw new Error('Mappls SDK could not be loaded — check the key and its whitelisted domains');
+    throw new Error('Mappls SDK could not be loaded. Check the key and its whitelisted domains');
   })();
   sdk.catch(() => { sdk = null; }); // let a later attempt retry
   return sdk;
@@ -89,7 +89,7 @@ export async function fetchRoute(origin, d) {
 // a[data-spa] navigates inside the app instead of reloading the page, [data-visit-place] is remembered
 // for the "Did you visit?" prompt. Text is in the visitor's language: popups are rebuilt when it changes.
 export function doctorPopupHtml(d) {
-  const status = getStatus(d);
+  const status = doctorHours(d).status;
   return `
     <div class="w-[236px]">
       <div class="flex items-center gap-2.5">
@@ -101,7 +101,7 @@ export function doctorPopupHtml(d) {
       </div>
       <div class="flex items-center flex-wrap gap-1.5 mt-2.5 text-[11px]">
         <span class="font-medium px-2 py-[3px] rounded-md ${status.open ? 'bg-[#F0FDF4] text-[#16A34A]' : 'bg-[#F1F5F9] text-[#64748B]'}">${status.open ? '●' : '○'} ${status.label}</span>
-        <span class="text-[#64748B]"><span class="text-[#F59E0B]">★</span> ${escapeHtml(d.rating ?? '—')}${d.distance_km != null ? ` · ${t('common.km', { km: d.distance_km })}` : ''}</span>
+        <span class="text-[#64748B]"><span class="text-[#F59E0B]">★</span> ${escapeHtml(d.rating ?? '–')}${d.distance_km != null ? ` · ${t('common.km', { km: d.distance_km })}` : ''}</span>
       </div>
       <div class="text-[11px] text-[#94A3B8] mt-1.5 truncate">${escapeHtml(d.hospital)}</div>
       <div class="flex gap-1.5 mt-3">
@@ -142,5 +142,5 @@ export function placePinHtml(h) {
 
 // The SDK owns the wrapper's transform, so the rotated pin lives one level down
 export function doctorPinHtml(d) {
-  return `<div class="mw-pin-wrap"><div class="mw-pin${getStatus(d).open ? '' : ' is-closed'}"><span>${escapeHtml(d.initials)}</span></div></div>`;
+  return `<div class="mw-pin-wrap"><div class="mw-pin${doctorHours(d).status.open ? '' : ' is-closed'}"><span>${escapeHtml(d.initials)}</span></div></div>`;
 }

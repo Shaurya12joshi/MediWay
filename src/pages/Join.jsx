@@ -72,7 +72,7 @@ export function ClinicPicker({ city, value, onPick, hint = 'Optional. If you can
 }
 
 export default function Join() {
-  useTitle('MediWay — Join as a doctor or clinic');
+  useTitle('Join as a doctor or clinic · MediWay');
   const { data: cities = [] } = useGetCitiesQuery();
   const [apply, { isLoading: sending }] = useApplyAsDoctorMutation();
   const [form, setForm] = useState({

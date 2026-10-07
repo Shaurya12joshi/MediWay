@@ -29,7 +29,7 @@ export default function DirectionsDrawer() {
     : estimateMinutes(d.distance_km, mode);
   const timeLabel = mode => {
     const m = minutes(mode);
-    if (m == null) return '—';
+    if (m == null) return '–';
     const text = m >= 60 ? t('dir.hoursMin', { h: Math.floor(m / 60), m: m % 60 }) : t('dir.min', { min: m });
     return route && mode === 'drive' ? text : `~${text}`;
   };

@@ -291,4 +291,11 @@ export default {
   'specialty.Dentist': 'Dentista',
   'profile.fromWebsite': 'Datos tomados del sitio web de {place}',
   'profile.sourceLink': 'Ver su página',
+  'hours.atPlace': 'En {place}: {hours}',
+  'hours.doctorNotListed': 'horario propio del médico no indicado',
+  'nf.title': 'Página no encontrada',
+  'nf.text': 'Esta dirección no lleva a ninguna parte en MediWay. Si necesitas atención médica, podemos ayudarte igualmente.',
+  'nf.search': 'Buscar atención cerca',
+  'nf.emergency': 'Ayuda de emergencia',
+  'nf.home': 'Inicio',
 }

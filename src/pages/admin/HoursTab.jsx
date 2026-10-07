@@ -7,6 +7,7 @@ import {
   NEAR_TOURISTS_KM, useAdminCitiesQuery, useDismissSuggestionMutation, useHoursPagesInfiniteQuery, useHoursSummaryQuery,
   useRemoveAutoHoursMutation, useSaveDetailsMutation, useSaveHoursMutation,
 } from './adminApi';
+import ScheduleEditor, { EMPTY_HOURS, readSchedule, toggle } from './ScheduleEditor';
 import { BTN_APPROVE, BTN_PLAIN, Empty, KindBadge, LOAD_MORE, SELECT, TabLoading, chip, fmtShortDate, mapLink } from './shared';
 
 // Opening hours for live places. scripts/enrich-hours.mjs fills what it can from the places' own
@@ -26,17 +27,7 @@ const SOURCE_LABEL = {
   osm: 'From OpenStreetMap',
 };
 const KINDS = [['hospital', 'Hospitals'], ['pharmacy', 'Pharmacies'], ['clinic', 'Clinics'], ['lab', 'Labs']];
-const DAY_BUTTONS = [['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6], ['Sun', 0]];
-const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6], MON_SAT = [1, 2, 3, 4, 5, 6];
-const HOUR_PRESETS = [
-  { label: 'Open 24/7', days: ALL_DAYS, ranges: [['00:00', '23:59']] },
-  { label: 'Mon–Sat 9 AM–9 PM', days: MON_SAT, ranges: [['09:00', '21:00']] },
-  { label: 'Every day 7 AM–8 PM', days: ALL_DAYS, ranges: [['07:00', '20:00']] },
-  { label: 'Mon–Sat 10–2 & 5–8', days: MON_SAT, ranges: [['10:00', '14:00'], ['17:00', '20:00']] },
-];
 const ER_CHOICES = [['yes', 'Yes'], ['no', 'No'], ['unknown', 'Not sure']];
-// Two sessions (morning + evening OPD) is the most a day needs here
-const MAX_RANGES = 2;
 // Asked on the same call; they show as badges and filters for travellers on the search page
 const DETAIL_QUESTIONS = [
   ['intl_insurance', 'Takes international travel insurance?', ['hospital', 'clinic']],
@@ -69,8 +60,6 @@ function DetailQuestions({ place: h, answers, setAnswers }) {
   );
 }
 
-const TIME_INPUT = 'border-[1.5px] border-[#E6E6E1] rounded-[8px] px-[8px] py-[5px] text-[13px] font-sans';
-const toggle = on => on ? 'bg-[#1E293B] text-white border-[#1E293B]' : 'bg-white text-[#64748B] border-[#E6E6E1]';
 
 function HoursCard({ place: h, listArgs, onSkip }) {
   const dispatch = useDispatch();
@@ -83,14 +72,10 @@ function HoursCard({ place: h, listArgs, onSkip }) {
   const hasHours = Array.isArray(h.schedule) && h.schedule.length > 0;
   const tried = h.hours_source === 'unreachable' && h.hours_checked_at ? `No answer on ${fmtShortDate(h.hours_checked_at)}` : '';
 
-  const [days, setDays] = useState([]);
-  const [ranges, setRanges] = useState([['', '']]);
+  const [hours, setHours] = useState(EMPTY_HOURS);
   const [er, setEr] = useState(h.er24 === true ? 'yes' : h.er24 === false ? 'no' : null);
   const [error, setError] = useState('');
 
-  const toggleDay = d => setDays(ds => ds.includes(d) ? ds.filter(x => x !== d) : [...ds, d]);
-  const setRange = (i, which, value) => setRanges(rs => rs.map((r, j) => j === i ? (which === 0 ? [value, r[1]] : [r[0], value]) : r));
-  const applyPreset = p => { setDays(p.days); setRanges(p.ranges); };
 
   // Only the answers that changed are sent
   const changedDetails = Object.fromEntries(Object.entries(answers).filter(([k, v]) => v !== (h[k] ?? null)));
@@ -106,26 +91,20 @@ function HoursCard({ place: h, listArgs, onSkip }) {
   async function submit(outcome, schedule, er24, message) {
     if (outcome === 'verified' && !(await sendDetails())) return;
     const { error } = await save({ id: h.id, outcome, schedule, er24, listArgs });
-    if (error) { console.error(error); setError(error.message || 'Something went wrong — try again'); return; }
+    if (error) { console.error(error); setError(error.message || 'Something went wrong. Try again'); return; }
     dispatch(showToast(message));
   }
 
   function handleSave() {
     setError('');
-    const slots = ranges.map(([open, close]) => ({ open, close })).filter(s => s.open || s.close);
-    let schedule = null;
-    if (!hasHours && (days.length || slots.length)) {
-      if (!days.length) return setError('Pick the days it’s open.');
-      if (!slots.length || slots.some(s => !s.open || !s.close)) return setError('Enter opening and closing times.');
-      if (slots.some(s => s.close <= s.open)) return setError('Closing time must be after opening time (overnight hours aren’t supported yet).');
-      const sortedDays = [...days].sort();
-      schedule = slots.map(s => ({ days: sortedDays, open: s.open, close: s.close }));
-    }
+    const read = hasHours ? {} : readSchedule(hours);
+    if (read.error) return setError(read.error);
+    const schedule = read.schedule ?? null;
     const hasEr24 = er === 'yes' ? true : er === 'no' ? false : null;
     if (!schedule && !(isHospital && hasEr24 !== null)) {
       // Traveller answers alone are saved; the place stays in the queue for its hours
       if (hasDetails) {
-        return sendDetails().then(ok => { if (ok) { dispatch(showToast(`Saved traveller details for ${h.name} — hours still needed`)); } });
+        return sendDetails().then(ok => { if (ok) { dispatch(showToast(`Saved traveller details for ${h.name}. Hours still needed`)); } });
       }
       return setError(isHospital ? 'Add hours or answer the emergency question.' : 'Add the opening hours, or press “No answer”.');
     }
@@ -152,30 +131,7 @@ function HoursCard({ place: h, listArgs, onSkip }) {
 
       {!hasHours && (
         <div className="mt-[14px] pt-[14px] border-t border-[#F0EFEA]">
-          <div className="flex flex-wrap gap-[6px] mb-[10px]">
-            {HOUR_PRESETS.map(p => (
-              <button key={p.label} type="button" onClick={() => applyPreset(p)} className="px-[10px] py-[6px] rounded-[8px] text-[12px] font-medium border-[1.5px] border-[#E6E6E1] bg-white text-[#3F3F46] cursor-pointer font-sans hover:border-[#1E293B]">{p.label}</button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-[5px] mb-[8px]">
-            {DAY_BUTTONS.map(([label, d]) => (
-              <button key={d} type="button" aria-pressed={days.includes(d)} onClick={() => toggleDay(d)}
-                className={`w-[42px] py-[6px] rounded-[7px] text-[12px] font-medium border-[1.5px] cursor-pointer font-sans ${toggle(days.includes(d))}`}>{label}</button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-[8px]">
-            {ranges.map(([open, close], i) => (
-              <div key={i} className="flex items-center gap-[6px]">
-                <input type="time" value={open} aria-label="Opens at" onChange={e => setRange(i, 0, e.target.value)} className={TIME_INPUT} />
-                <span className="text-[12px] text-[#94A3B8]">to</span>
-                <input type="time" value={close} aria-label="Closes at" onChange={e => setRange(i, 1, e.target.value)} className={TIME_INPUT} />
-                {i > 0 && <button type="button" onClick={() => setRanges(rs => rs.filter((_, j) => j !== i))} className="text-[#94A3B8] bg-transparent border-none cursor-pointer text-[16px] leading-none px-[4px]" title="Remove">×</button>}
-              </div>
-            ))}
-          </div>
-          {ranges.length < MAX_RANGES && (
-            <button type="button" onClick={() => setRanges(rs => [...rs, ['17:00', '20:00']])} className="mt-[6px] text-[12px] text-[#D0423A] bg-transparent border-none cursor-pointer font-sans p-0">+ Add evening session</button>
-          )}
+          <ScheduleEditor value={hours} onChange={setHours} />
         </div>
       )}
 
@@ -193,7 +149,7 @@ function HoursCard({ place: h, listArgs, onSkip }) {
 
       <div className="mt-[14px] flex flex-wrap gap-[8px] items-center">
         <button type="button" disabled={busy} onClick={handleSave} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>Save</button>
-        <button type="button" disabled={busy} onClick={() => submit('unreachable', null, null, 'Noted — it’ll come back later in the queue')}
+        <button type="button" disabled={busy} onClick={() => submit('unreachable', null, null, 'Noted. It’ll come back later in the queue')}
           className={`${BTN_PLAIN} px-[14px] py-[9px] text-[13px] hover:border-[#B45309] hover:text-[#B45309]`}>No answer</button>
         <button type="button" disabled={busy} onClick={() => onSkip(h.id)} className="bg-transparent border-none text-[13px] text-[#94A3B8] cursor-pointer font-sans hover:text-[#1E293B]">Skip</button>
         {error && <span role="alert" className="text-[12px] text-[#D0423A]">{error}</span>}
@@ -267,14 +223,14 @@ function SuggestionCard({ place: h, listArgs }) {
       schedule: h.suggested_schedule ?? null,
       er24: isHospital ? h.suggested_er24 ?? null : null,
     });
-    if (error) { console.error(error); setError(error.message || 'Something went wrong — try again'); return; }
+    if (error) { console.error(error); setError(error.message || 'Something went wrong. Try again'); return; }
     toast(`Saved ${h.name}`);
   }
 
   async function reject() {
     setError('');
     const { error } = await dismiss({ id: h.id, listArgs });
-    if (error) { console.error(error); setError(error.message || 'Something went wrong — try again'); return; }
+    if (error) { console.error(error); setError(error.message || 'Something went wrong. Try again'); return; }
     toast('Moved to the phone queue');
   }
 
@@ -284,7 +240,7 @@ function SuggestionCard({ place: h, listArgs }) {
       <FoundHours schedule={h.suggested_schedule} er24={h.suggested_er24} kind={h.kind} evidence={h.suggestion_evidence} label="Suggested automatically: check the evidence" />
       <div className="mt-[14px] flex flex-wrap gap-[8px] items-center">
         <button type="button" disabled={saving || dismissing} onClick={accept} className={`${BTN_APPROVE} px-[16px] py-[9px] text-[13px]`}>✓ Accept</button>
-        <button type="button" disabled={saving || dismissing} onClick={reject} className={`${BTN_PLAIN} px-[14px] py-[9px] text-[13px] hover:border-[#D0423A] hover:text-[#D0423A]`}>Not right — I’ll call</button>
+        <button type="button" disabled={saving || dismissing} onClick={reject} className={`${BTN_PLAIN} px-[14px] py-[9px] text-[13px] hover:border-[#D0423A] hover:text-[#D0423A]`}>Not right, I’ll call</button>
         {error && <span role="alert" className="text-[12px] text-[#D0423A]">{error}</span>}
       </div>
     </div>
@@ -307,15 +263,15 @@ function AutoFilledCard({ place: h, listArgs }) {
       schedule: hasAutoHours ? h.schedule : null,
       er24: h.kind === 'hospital' && h.er24_auto ? h.er24 : null,
     });
-    if (error) { console.error(error); setError(error.message || 'Something went wrong — try again'); return; }
+    if (error) { console.error(error); setError(error.message || 'Something went wrong. Try again'); return; }
     toast(`Confirmed ${h.name}`);
   }
 
   async function takeOff() {
     setError('');
     const { error } = await remove({ id: h.id, listArgs });
-    if (error) { console.error(error); setError(error.message || 'Something went wrong — try again'); return; }
-    toast('Removed — back in the phone queue');
+    if (error) { console.error(error); setError(error.message || 'Something went wrong. Try again'); return; }
+    toast('Removed and back in the phone queue');
   }
 
   return (
