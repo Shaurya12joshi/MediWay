@@ -9,6 +9,7 @@ import AuthButton from '../components/AuthButton';
 import Footer from '../components/Footer';
 import { BackIcon, PinIcon, ThumbIcon } from '../components/icons';
 import { NotFoundMessage, Spinner, useTitle } from '../components/ui';
+import { PAGE_DESCRIPTIONS } from '../lib/meta';
 
 const STOOD_OUT_OPTIONS = [
   'Bedside manner', 'Short wait time', 'Accurate diagnosis', 'Clear explanation',
@@ -211,7 +212,7 @@ function ReviewForm({ subject }) {
 }
 
 export default function Review() {
-  useTitle('Write a review · MediWay');
+  useTitle('Write a review · MediWay', PAGE_DESCRIPTIONS.review);
   const [params] = useSearchParams();
   const id = params.get('id');
   const placeId = params.get('place');

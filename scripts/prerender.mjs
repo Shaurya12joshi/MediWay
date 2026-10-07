@@ -15,6 +15,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PAGE_DESCRIPTIONS, doctorDescription } from '../src/lib/meta.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -101,7 +102,8 @@ function page({ path, title, description, jsonLd, body }) {
     .replace(/\s*<meta name="description"[^>]*>/, '')
     .replace(/<title>[\s\S]*?<\/title>/, head);
   if (!html.includes('<div id="root"></div>')) throw new Error('dist/index.html has no empty #root');
-  html = html.replace('<div id="root"></div>', `<div id="root"><main style="max-width:860px;margin:0 auto;padding:32px 20px;font-family:'DM Sans',system-ui,sans-serif;line-height:1.5">${body}</main></div>`);
+  // App pages with no static content: just the head (the app draws the page)
+  if (body) html = html.replace('<div id="root"></div>', `<div id="root"><main style="max-width:860px;margin:0 auto;padding:32px 20px;font-family:'DM Sans',system-ui,sans-serif;line-height:1.5">${body}</main></div>`);
 
   // /varanasi/hospitals.html: served at /varanasi/hospitals with no trailing-slash redirect
   const file = join(DIST, `${path}.html`);
@@ -208,8 +210,7 @@ async function main() {
     for (const d of doctors) {
       const path = `/doctor/${d.id}`;
       const specialty = (d.specialty ?? []).join(', ');
-      const description = `${d.name}${specialty ? `, ${specialty}` : ''} at ${d.hospital || city.name}, ${city.name}.` +
-        `${d.languages?.length ? ` Speaks ${d.languages.join(', ')}.` : ''}${d.walk_in ? ' Walk-ins welcome.' : ''} Hours, directions and patient reviews on MediWay.`;
+      const description = doctorDescription({ ...d, city: city.name });
       page({
         path,
         title: `${d.name}${specialty ? `, ${specialty}` : ''} in ${city.name} | MediWay`,
@@ -227,6 +228,13 @@ async function main() {
       pages++;
     }
   }
+
+  // The app's own pages: their title and description in the static HTML, for link previews and crawlers
+  for (const [path, title, key] of [
+    ['/search', 'Find care · MediWay', 'search'],
+    ['/emergency', 'Emergency help · MediWay', 'emergency'],
+    ['/join', 'Join as a doctor or clinic · MediWay', 'join'],
+  ]) { page({ path, title, description: PAGE_DESCRIPTIONS[key] }); pages++; }
 
   if (SITE) {
     const today = new Date().toISOString().slice(0, 10);

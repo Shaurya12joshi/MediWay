@@ -4,12 +4,13 @@ import { useTitle } from '../components/ui';
 import LanguagePicker from '../components/LanguagePicker';
 import Footer from '../components/Footer';
 import { useT } from '../i18n';
+import { PAGE_DESCRIPTIONS } from '../lib/meta';
 
 // Any address that leads nowhere. Netlify serves this with a real 404 status (netlify.toml).
 // Someone on a dead link may need care now, so the way out is search and emergency help, not just "Home".
 export default function NotFound() {
   const t = useT();
-  useTitle(`${t('nf.title')} · MediWay`);
+  useTitle(`${t('nf.title')} · MediWay`, PAGE_DESCRIPTIONS.notFound);
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F2ED]">
       <nav className="flex items-center justify-between px-6 py-5 md:px-12">

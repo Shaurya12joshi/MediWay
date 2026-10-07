@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
+import { SITE_DESCRIPTION, setPageMeta } from '../lib/meta';
 
 // Five stars, filled up to the rounded rating
 export function Stars({ rating, size = 12, className = 'gap-[1px]' }) {
@@ -32,6 +33,7 @@ export function NotFoundMessage({ title, to = '/search', linkText = '← Back to
   );
 }
 
-export function useTitle(title) {
-  useEffect(() => { document.title = title; }, [title]);
+// The page's title and description (src/lib/meta.js); every page sets both
+export function useTitle(title, description = SITE_DESCRIPTION) {
+  useEffect(() => { setPageMeta(title, description); }, [title, description]);
 }

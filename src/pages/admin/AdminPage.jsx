@@ -12,6 +12,7 @@ import PlacesTab from './PlacesTab';
 import HoursTab from './HoursTab';
 import ApplicationsTab from './ApplicationsTab';
 import DoctorsTab from './DoctorsTab';
+import { PAGE_DESCRIPTIONS } from '../../lib/meta';
 
 const TABS = [['reviews', 'Review proofs'], ['places', 'Imported places'], ['doctors', 'Imported doctors'], ['hours', 'Hours'], ['applications', 'Doctor applications']];
 const TAB_KEY = 'mw.adminTab';
@@ -54,7 +55,7 @@ function AdminTabs() {
 }
 
 export default function AdminPage() {
-  useTitle('Admin · MediWay');
+  useTitle('Admin · MediWay', PAGE_DESCRIPTIONS.admin);
   const { ready, user } = useSelector(s => s.auth);
   const isAdmin = useIsAdminQuery(user ? user.id : skipToken);
 

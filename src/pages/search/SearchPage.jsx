@@ -20,15 +20,16 @@ import FilterSidebar from './FilterSidebar';
 import ResultsList from './ResultsList';
 import MapView from './MapView';
 import DirectionsDrawer from './DirectionsDrawer';
+import { PAGE_DESCRIPTIONS } from '../../lib/meta';
 
 const VIEW_BTN = 'flex items-center gap-1.5 px-3.5 py-[5px] rounded-[7px] text-[13px] font-medium border-none cursor-pointer font-sans transition-all';
 const VIEW_ON = `${VIEW_BTN} bg-white text-[#1E293B] shadow-sm`;
 const VIEW_OFF = `${VIEW_BTN} bg-transparent text-[#64748B]`;
 
 // `title`: the city pages (/varanasi/hospitals) name what they list
-export default function SearchPage({ title }) {
+export default function SearchPage({ title, description }) {
   const t = useT();
-  useTitle(title ?? `${t('search.title')} · MediWay`);
+  useTitle(title ?? `${t('search.title')} · MediWay`, description ?? PAGE_DESCRIPTIONS.search);
   const dispatch = useDispatch();
   const [params] = useSearchParams();
   const { origin, filters, query, sortBy, view } = useSelector(s => s.search);

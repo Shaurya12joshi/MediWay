@@ -11,6 +11,7 @@ import LanguagePicker from '../components/LanguagePicker';
 import { useT } from '../i18n';
 import { rememberVisit } from '../lib/visits';
 import { specialtyLabels } from '../lib/specialties';
+import { PAGE_DESCRIPTIONS, doctorDescription } from '../lib/meta';
 
 const SORTS = ['recent', 'helpful', 'highest', 'lowest'];
 const FILTERS = ['all', 'verified', '5', '4', 'low'];
@@ -357,7 +358,8 @@ export default function Profile() {
   const id = useParams().id ?? params.get('id');
   const doctor = useGetDoctorQuery(id, { skip: !id });
   const reviews = useGetReviewsQuery(id, { skip: !id });
-  useTitle(doctor.data ? `${doctor.data.name} · MediWay` : `${t('profile.title')} · MediWay`);
+  useTitle(doctor.data ? `${doctor.data.name} · MediWay` : `${t('profile.title')} · MediWay`,
+    doctor.data ? doctorDescription(doctor.data) : PAGE_DESCRIPTIONS.search);
 
   let content;
   if (!id) content = <NotFoundMessage title={t('profile.noDoctor')} linkText={t('common.backToResultsArrow')} />;

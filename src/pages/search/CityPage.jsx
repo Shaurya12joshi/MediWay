@@ -9,16 +9,17 @@ import { useT } from '../../i18n';
 import { resetFilters, setFilter, setOrigin, setView } from '../../store/searchSlice';
 import NotFound from '../NotFound';
 import SearchPage from './SearchPage';
+import { cityPageDescription } from '../../lib/meta';
 
 // /varanasi/hospitals, /varanasi/emergency …: the search page set to one city and one kind of place.
 // These are the addresses search engines index (scripts/prerender.mjs writes their HTML).
 export const CATEGORIES = {
-  hospitals: { type: 'hospital', label: 'kind.hospitals' },
-  clinics: { type: 'clinic', label: 'kind.clinics' },
-  pharmacies: { type: 'pharmacy', label: 'kind.pharmacies' },
-  labs: { type: 'lab', label: 'kind.labs' },
-  doctors: { type: 'doctor', label: 'kind.doctors' },
-  emergency: { type: 'all', er24: true, label: 'results.erPlaces' },
+  hospitals: { type: 'hospital', label: 'kind.hospitals', en: 'Hospitals' },
+  clinics: { type: 'clinic', label: 'kind.clinics', en: 'Clinics' },
+  pharmacies: { type: 'pharmacy', label: 'kind.pharmacies', en: 'Pharmacies' },
+  labs: { type: 'lab', label: 'kind.labs', en: 'Diagnostic labs' },
+  doctors: { type: 'doctor', label: 'kind.doctors', en: 'Doctors' },
+  emergency: { type: 'all', er24: true, label: 'results.erPlaces', en: 'Hospitals with a 24/7 emergency room' },
 };
 
 export default function CityPage() {
@@ -39,5 +40,5 @@ export default function CityPage() {
   }, [match, preset, dispatch]);
 
   if (!preset || (cities.data && !match)) return <NotFound />;
-  return <SearchPage title={`${t(preset.label)} · ${match?.name ?? ''} | MediWay`} />;
+  return <SearchPage title={`${t(preset.label)} · ${match?.name ?? ''} | MediWay`} description={cityPageDescription(preset.en, match?.name ?? '')} />;
 }

@@ -4,6 +4,7 @@ import { supabase, authLinkType } from '../lib/supabase';
 import { PinIcon } from '../components/icons';
 import { useTitle } from '../components/ui';
 import { useSiteStats } from '../store/siteStats';
+import { PAGE_DESCRIPTIONS } from '../lib/meta';
 
 const INPUT = 'w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D0423A] focus:ring-2 focus:ring-[#D0423A]/10 transition-all';
 const LABEL = 'text-xs font-semibold text-slate-600 mb-1.5 block';
@@ -212,7 +213,7 @@ function InviteSetupPanel({ email, onDone }) {
 }
 
 export default function Auth() {
-  useTitle('Alpha access · MediWay');
+  useTitle('Alpha access · MediWay', PAGE_DESCRIPTIONS.auth);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [tab, setTab] = useState(params.get('tab') === 'signup' ? 'signup' : 'login');

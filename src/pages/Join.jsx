@@ -5,6 +5,7 @@ import { useApplyAsDoctorMutation, useFindPlacesQuery, useGetCitiesQuery } from 
 import Footer from '../components/Footer';
 import { PinIcon } from '../components/icons';
 import { useTitle } from '../components/ui';
+import { PAGE_DESCRIPTIONS } from '../lib/meta';
 
 // Doctors and clinics add themselves. Nothing goes live until the MediWay team checks the
 // registration number and approves it in Admin -> Applications.
@@ -72,7 +73,7 @@ export function ClinicPicker({ city, value, onPick, hint = 'Optional. If you can
 }
 
 export default function Join() {
-  useTitle('Join as a doctor or clinic · MediWay');
+  useTitle('Join as a doctor or clinic · MediWay', PAGE_DESCRIPTIONS.join);
   const { data: cities = [] } = useGetCitiesQuery();
   const [apply, { isLoading: sending }] = useApplyAsDoctorMutation();
   const [form, setForm] = useState({

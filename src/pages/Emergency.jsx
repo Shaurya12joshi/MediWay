@@ -13,6 +13,7 @@ import LanguagePicker from '../components/LanguagePicker';
 import { PinIcon } from '../components/icons';
 import { useTitle } from '../components/ui';
 import { telHref } from './search/kinds';
+import { PAGE_DESCRIPTIONS } from '../lib/meta';
 
 function useOnline() {
   const [online, setOnline] = useState(navigator.onLine);
@@ -36,7 +37,7 @@ function timeAgo(t, at) {
 // Online it refreshes the list and saves it on the phone; offline it shows what was saved.
 export default function Emergency() {
   const t = useT();
-  useTitle(`${t('em.pageTitle')} · MediWay`);
+  useTitle(`${t('em.pageTitle')} · MediWay`, PAGE_DESCRIPTIONS.emergency);
   const online = useOnline();
   const savedOrigin = useSelector(s => s.search.origin);
 

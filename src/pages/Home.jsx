@@ -8,11 +8,12 @@ import Footer from '../components/Footer';
 import { PinIcon } from '../components/icons';
 import { useTitle } from '../components/ui';
 import heroMap from '../assets/hero-map.webp';
+import { PAGE_DESCRIPTIONS } from '../lib/meta';
 
 const NAV_LINKS = [['#features', 'Features'], ['#how-it-works', 'How it Works'], ['#emergency', 'Emergency']];
 
 export default function Home() {
-  useTitle('MediWay');
+  useTitle('MediWay: find a doctor, hospital or pharmacy in India', PAGE_DESCRIPTIONS.home);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const { placesListed, citiesLive, liveIn } = useSiteStats();
