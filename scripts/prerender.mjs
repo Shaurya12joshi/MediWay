@@ -1,7 +1,9 @@
 // Runs after `vite build`. Writes real HTML for the pages search engines should index:
 //   /<city>/hospitals, /clinics, /pharmacies, /labs, /doctors, /emergency   (every launched city)
 //   /doctor/<id>                                                              (every doctor)
-// as <path>.html files.
+// as <path>.html files, and gives the home page and the app's other pages their own head too.
+// Every page gets link-preview tags (Open Graph + X card), so a shared link shows a title,
+// description and picture in WhatsApp, X, Facebook, LinkedIn, Slack and iMessage.
 // plus sitemap.xml and robots.txt. Each page is the app's index.html with its own title,
 // description, canonical link, JSON-LD and a plain list of the places, so it reads fine
 // without JavaScript. React replaces that list with the live search page when it starts.
@@ -38,6 +40,22 @@ const env = readEnv();
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
 const ANON_KEY = env.VITE_SUPABASE_ANON_KEY;
 const SITE = (env.SITE_URL || env.URL || '').replace(/\/$/, '');
+
+// The picture link previews show: public/og-image.jpg, a screenshot of scripts/og-image.html.
+// Apps only fetch it from a full https:// address, so it needs SITE.
+const SHARE_IMAGE = {
+  path: '/og-image.jpg', width: 1200, height: 630,
+  alt: 'MediWay: doctors, hospitals and pharmacies near you in India, shown on a map',
+};
+
+// The app's own pages: no data needed, so they get their head even when Supabase can't be reached.
+// '/' is the home page itself (dist/index.html), which also answers /auth, /review, /profile?id=…
+const APP_PAGES = [
+  ['/', 'MediWay: find a doctor, hospital or pharmacy in India', 'home'],
+  ['/search', 'Find care · MediWay', 'search'],
+  ['/emergency', 'Emergency help · MediWay', 'emergency'],
+  ['/join', 'Join as a doctor or clinic · MediWay', 'join'],
+];
 
 // The same categories as src/pages/search/CityPage.jsx
 const CATEGORIES = {
@@ -81,7 +99,10 @@ function hoursText(schedule) {
   return schedule.map(s => `${(s.days ?? []).map(d => DAY[d]).join(', ')} ${s.open}–${s.close}`).join('; ');
 }
 
-const template = readFileSync(join(DIST, 'index.html'), 'utf8');
+// Without any head a previous run added, so running this twice doesn't double the tags
+const template = readFileSync(join(DIST, 'index.html'), 'utf8')
+  .replace(/\s*<(?:meta (?:property="og:|name="twitter:)|link rel="canonical")[^>]*>/g, '')
+  .replace(/\s*<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '');
 
 // One page: the built index.html with this page's head and a readable body
 function page({ path, title, description, jsonLd, body }) {
@@ -94,6 +115,13 @@ function page({ path, title, description, jsonLd, body }) {
     `<meta property="og:title" content="${esc(title)}">`,
     `<meta property="og:description" content="${esc(description)}">`,
     SITE && `<meta property="og:url" content="${esc(absolute(path))}">`,
+    SITE && `<meta property="og:image" content="${esc(absolute(SHARE_IMAGE.path))}">`,
+    SITE && `<meta property="og:image:type" content="image/jpeg">`,
+    SITE && `<meta property="og:image:width" content="${SHARE_IMAGE.width}">`,
+    SITE && `<meta property="og:image:height" content="${SHARE_IMAGE.height}">`,
+    SITE && `<meta property="og:image:alt" content="${esc(SHARE_IMAGE.alt)}">`,
+    // X reads the title, description and image from the og: tags; this asks for the large picture
+    `<meta name="twitter:card" content="summary_large_image">`,
     jsonLd && `<script type="application/ld+json">${ldJson(jsonLd)}</script>`,
   ].filter(Boolean).join('\n  ');
 
@@ -106,7 +134,7 @@ function page({ path, title, description, jsonLd, body }) {
   if (body) html = html.replace('<div id="root"></div>', `<div id="root"><main style="max-width:860px;margin:0 auto;padding:32px 20px;font-family:'DM Sans',system-ui,sans-serif;line-height:1.5">${body}</main></div>`);
 
   // /varanasi/hospitals.html: served at /varanasi/hospitals with no trailing-slash redirect
-  const file = join(DIST, `${path}.html`);
+  const file = path === '/' ? join(DIST, 'index.html') : join(DIST, `${path}.html`);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, html);
 }
@@ -159,15 +187,18 @@ function doctorLd(d) {
 
 async function main() {
   if (!existsSync(join(DIST, 'index.html'))) throw new Error('Run vite build first');
+  if (!SITE) console.warn('prerender: no SITE_URL or URL set, so no canonical links, share images or sitemap');
+
+  for (const [path, title, key] of APP_PAGES) page({ path, title, description: PAGE_DESCRIPTIONS[key] });
+
   if (!SUPABASE_URL || !ANON_KEY) {
-    console.warn('prerender: no VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, skipping (the app still works)');
+    console.warn('prerender: no VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, so only the app pages (the app still works)');
     return;
   }
-  if (!SITE) console.warn('prerender: no SITE_URL or URL set, so no canonical links or sitemap');
 
   const cities = await rest('cities?select=slug,name,state&launched=eq.true&order=created_at');
-  const urls = ['/', '/search', '/emergency', '/join'];
-  let pages = 0;
+  const urls = APP_PAGES.map(([path]) => path);
+  let pages = APP_PAGES.length;
 
   for (const city of cities) {
     const where = `city=eq.${encodeURIComponent(city.name)}`;
@@ -228,13 +259,6 @@ async function main() {
       pages++;
     }
   }
-
-  // The app's own pages: their title and description in the static HTML, for link previews and crawlers
-  for (const [path, title, key] of [
-    ['/search', 'Find care · MediWay', 'search'],
-    ['/emergency', 'Emergency help · MediWay', 'emergency'],
-    ['/join', 'Join as a doctor or clinic · MediWay', 'join'],
-  ]) { page({ path, title, description: PAGE_DESCRIPTIONS[key] }); pages++; }
 
   if (SITE) {
     const today = new Date().toISOString().slice(0, 10);

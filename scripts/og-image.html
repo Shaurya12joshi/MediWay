@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!--
+  The picture shown when someone shares a MediWay link (WhatsApp, X, Facebook, LinkedIn, Slack…).
+  public/og-image.jpg is a 1200×630 screenshot of this page. After editing, re-render it from the project root:
+
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars \
+    --force-device-scale-factor=1 --window-size=1200,630 --virtual-time-budget=8000 \
+    --screenshot=/tmp/og-image.png "file://$PWD/scripts/og-image.html"
+  sips -s format jpeg -s formatOptions 88 /tmp/og-image.png --out public/og-image.jpg
+
+  JPEG keeps it near 150 KB: WhatsApp drops preview images much over 300 KB.
+  Keep the important parts away from the edges: some apps crop the sides to a square.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=block" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: #F8F2ED;
+    color: #1E293B;
+    font-family: "DM Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  /* Soft brand glow behind the card */
+  .glow { position: absolute; width: 520px; height: 520px; border-radius: 50%; filter: blur(110px); opacity: .22; }
+  .glow.red { background: #D0423A; right: -120px; top: -160px; }
+  .glow.green { background: #1A7A52; right: 260px; bottom: -300px; opacity: .14; }
+
+  .wrap { position: relative; display: flex; align-items: center; gap: 56px; height: 100%; padding: 0 64px 0 72px; }
+
+  /* Left: brand and promise */
+  .copy { flex: 1; min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 56px; height: 56px; border-radius: 16px; background: #D6453A; display: flex; align-items: center; justify-content: center; }
+  .wordmark { font-family: "Instrument Serif", serif; font-size: 46px; font-weight: 400; letter-spacing: -.01em; }
+  h1 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: 80px; line-height: .98; letter-spacing: -.015em; margin-top: 34px; }
+  h1 em { color: #D84B3E; }
+  .sub { font-size: 25px; line-height: 1.38; color: #57534E; margin-top: 22px; max-width: 520px; }
+  .chips { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #E7E1DA; border-radius: 999px; padding: 9px 16px; font-size: 18px; font-weight: 600; color: #334155; }
+  .chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  /* Right: the example search card, as on the home page */
+  .card { width: 440px; flex-shrink: 0; background: #fff; border-radius: 28px; overflow: hidden; box-shadow: 0 30px 60px rgba(30, 41, 59, .16), 0 0 0 1px rgba(30, 41, 59, .04); }
+  .map { position: relative; aspect-ratio: 45 / 32; background: #F3ECE4 url(../src/assets/hero-map.webp) center / cover; }
+  .at { position: absolute; transform: translate(-50%, -100%); }
+  .at.mid { transform: translate(-50%, -50%); }
+  .pin { width: 40px; height: 40px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); background: #D0423A; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(30, 41, 59, .22); }
+  .pin span { transform: rotate(45deg); color: #fff; font: 600 13px/1 "DM Sans", sans-serif; }
+  .place { width: 32px; height: 32px; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 4px 12px rgba(30, 41, 59, .16); }
+  .user { width: 18px; height: 18px; border-radius: 50%; background: #2563EB; border: 3px solid #fff; box-shadow: 0 0 0 9px rgba(37, 99, 235, .18), 0 2px 8px rgba(37, 99, 235, .45); }
+  .label { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 12px; padding: 7px 12px; white-space: nowrap; box-shadow: 0 10px 28px rgba(15, 23, 42, .16); font-size: 14px; font-weight: 600; }
+  .label b { width: 8px; height: 8px; border-radius: 50%; background: #16A34A; }
+  .label small { color: #94A3B8; font-size: 13px; font-weight: 500; }
+  .example { position: absolute; top: 10px; left: 10px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #475569; background: rgba(255, 255, 255, .92); border-radius: 999px; padding: 5px 10px; }
+  .osm { position: absolute; right: 8px; bottom: 7px; font-size: 9px; color: #64748B; background: rgba(255, 255, 255, .8); border-radius: 4px; padding: 2px 6px; }
+
+  .rows { padding: 6px 0; }
+  .row { display: flex; align-items: center; gap: 14px; padding: 13px 20px; }
+  .row + .row { border-top: 1px solid #F1F5F9; }
+  .avatar { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: "Instrument Serif", serif; font-size: 20px; flex-shrink: 0; }
+  .who { flex: 1; min-width: 0; }
+  .who p { font-weight: 600; font-size: 17px; line-height: 1.2; }
+  .who small { color: #64748B; font-size: 14px; }
+  .side { text-align: right; }
+  .side p { font-size: 15px; font-weight: 500; color: #334155; }
+  .open { display: inline-block; margin-top: 3px; font-size: 12px; font-weight: 700; color: #15803D; background: #DCFCE7; border-radius: 999px; padding: 2px 9px; }
+  .stars { font-size: 14px; color: #64748B; }
+  .stars i { color: #F59E0B; font-style: normal; }
+</style>
+</head>
+<body>
+  <div class="glow red"></div>
+  <div class="glow green"></div>
+
+  <div class="wrap">
+    <div class="copy">
+      <div class="brand">
+        <div class="logo">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        </div>
+        <span class="wordmark">MediWay</span>
+      </div>
+
+      <h1>Trusted healthcare,<br><em>wherever</em> you travel</h1>
+      <p class="sub">Doctors, hospitals and pharmacies near you in India, with opening hours and 24/7 emergency rooms.</p>
+
+      <div class="chips">
+        <span class="chip"><i style="background:#D0423A"></i>24/7 ERs</span>
+        <span class="chip"><i style="background:#2563EB"></i>English-speaking doctors</span>
+        <span class="chip"><i style="background:#16A34A"></i>No app needed</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="map">
+        <span class="example">Example</span>
+        <div class="at" style="left:20%;top:30%"><div class="pin"><span>PS</span></div></div>
+        <div class="at" style="left:12%;top:58%"><div class="pin"><span>RI</span></div></div>
+        <div class="at mid" style="left:50%;top:62%"><div class="place" style="color:#16A34A;border:2px solid #16A34A;font-size:12px">Rx</div></div>
+        <div class="at mid" style="left:66.5%;top:36.5%"><div class="place" style="color:#D0423A;border:2px solid #D0423A;font-size:15px">H</div></div>
+        <div class="at" style="left:66.5%;top:calc(36.5% - 24px)"><div class="label"><b></b>Emergency room <small>0.4 km</small></div></div>
+        <div class="at mid" style="left:30.9%;top:74.4%"><div class="user"></div></div>
+        <span class="osm">© OpenStreetMap contributors</span>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <div class="avatar" style="background:linear-gradient(135deg,#D0423A,#E87040)">PS</div>
+          <div class="who"><p>Dr. Priya Sharma</p><small>General Physician · English</small></div>
+          <div class="side"><p>0.4 km</p><span class="stars"><i>★</i> 4.9</span></div>
+        </div>
+        <div class="row">
+          <div class="avatar" style="background:#EAF4F0;color:#16A34A;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px">Rx</div>
+          <div class="who"><p>Pharmacy</p><small>Open late · 1.1 km</small></div>
+          <div class="side"><span class="open">Open</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
