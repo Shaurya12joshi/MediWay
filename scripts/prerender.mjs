@@ -120,6 +120,7 @@ function page({ path, title, description, jsonLd, body }) {
     SITE && `<meta property="og:image:width" content="${SHARE_IMAGE.width}">`,
     SITE && `<meta property="og:image:height" content="${SHARE_IMAGE.height}">`,
     SITE && `<meta property="og:image:alt" content="${esc(SHARE_IMAGE.alt)}">`,
+    SITE && `<meta name="twitter:image:alt" content="${esc(SHARE_IMAGE.alt)}">`,
     // X reads the title, description and image from the og: tags; this asks for the large picture
     `<meta name="twitter:card" content="summary_large_image">`,
     jsonLd && `<script type="application/ld+json">${ldJson(jsonLd)}</script>`,

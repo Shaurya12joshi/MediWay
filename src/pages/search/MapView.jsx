@@ -174,6 +174,13 @@ export default function MapView({ visible, doctors, places, showDoctorCards, res
           if (map.loaded()) res(); else map.addListener('load', res);
         }).then(() => addRouteLayers(map));
 
+        // The SDK adds its logo link (no text) in its own time: name it for screen readers whenever it appears
+        const nameLogo = () => {
+          for (const a of map.getContainer().querySelectorAll('a[href*="mappls.com"]:not([aria-label])')) a.setAttribute('aria-label', 'Map by Mappls');
+        };
+        new MutationObserver(nameLogo).observe(map.getContainer(), { childList: true, subtree: true });
+        nameLogo();
+
         kept = { container, map, userMarker, markers: {}, styleLoaded, fitted: false, lastOrigin: `${o.lat},${o.lng}`, hint: hintEl.current };
         setReady(true);
         whenLoaded();
@@ -312,7 +319,7 @@ export default function MapView({ visible, doctors, places, showDoctorCards, res
     <div className={`${visible ? '' : 'hidden'} grid grid-cols-1 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_420px] md:h-[calc(100vh-160px)] lg:h-[calc(100vh-112px)] md:overflow-hidden -mx-4 sm:-mx-6 -mt-5 -mb-12 border-t border-[#E2E8F0]`}>
       <div className="relative h-[320px] sm:h-[420px] md:h-full bg-[#F3ECE4]">
         {/* The map's own #map container goes in here */}
-        <div ref={hostEl} className="w-full h-full"></div>
+        <div ref={hostEl} className="w-full h-full" role="region" aria-label={t('map.label')}></div>
 
         <div ref={hintEl} className="absolute inset-0 z-[6] flex items-center justify-center bg-[#1E293B]/45 text-white text-[14px] font-medium pointer-events-none opacity-0 transition-opacity duration-300">
           {t('map.twoFingers')}
@@ -330,18 +337,18 @@ export default function MapView({ visible, doctors, places, showDoctorCards, res
         <div className="absolute top-3 right-3 z-[4] flex flex-col gap-2">
           <div className="mw-ctrl-group">
             <button type="button" className="mw-ctrl" onClick={() => ready && kept.map.easeTo({ zoom: kept.map.getZoom() + 1, duration: 250 })} aria-label={t('map.zoomIn')}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             </button>
             <button type="button" className="mw-ctrl" onClick={() => ready && kept.map.easeTo({ zoom: kept.map.getZoom() - 1, duration: 250 })} aria-label={t('map.zoomOut')}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14" /></svg>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M5 12h14" /></svg>
             </button>
           </div>
           <div className="mw-ctrl-group">
             <button type="button" className="mw-ctrl" onClick={() => ready && origin && kept.map.flyTo({ center: [origin.lng, origin.lat], zoom: 14 })} aria-label={t('map.myLocation')} title={t('map.myLocation')}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
             </button>
             <button type="button" className="mw-ctrl" onClick={() => ready && fitToResults()} aria-label={t('map.showAll')} title={t('map.showAll')}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" /></svg>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" /></svg>
             </button>
           </div>
         </div>
@@ -361,7 +368,7 @@ export default function MapView({ visible, doctors, places, showDoctorCards, res
             <div className="font-serif text-[17px]">{t(filtersOpen ? 'search.filters' : 'search.resultsNearYou')}</div>
             <button type="button" onClick={onToggleFilters} aria-expanded={filtersOpen} aria-controls="mapFilters"
               className={`flex items-center gap-1.5 shrink-0 border-[1.5px] bg-white rounded-[9px] px-3 py-[5px] text-[12px] font-medium cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all ${filtersOpen || activeFilters ? 'border-[#D0423A] text-[#D0423A]' : 'border-[#E2E8F0] text-[#1E293B]'}`}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
               {filtersOpen ? t('search.done') : activeFilters ? t('search.filtersCount', { count: activeFilters }) : t('search.filters')}
             </button>
           </div>

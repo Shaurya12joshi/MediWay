@@ -307,4 +307,5 @@ export default {
   'nf.search': 'Find care near you',
   'nf.emergency': 'Emergency help',
   'nf.home': 'Home',
+  'map.label': 'Map of doctors and places near you. The same results are in the List view.',
 }

@@ -66,8 +66,8 @@ function PlaceCard({ place: h, anim, origin, cityName }) {
       </a>
       <div className="flex flex-col gap-1.5 shrink-0">
         {h.phone && (
-          <a href={telHref(h.phone)} title={t('results.callPhone', { phone: h.phone })} className="w-8 h-8 rounded-[9px] border-[1.5px] border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:border-[#D0423A] hover:text-[#D0423A] transition-colors">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+          <a href={telHref(h.phone)} title={t('results.callPhone', { phone: h.phone })} aria-label={t('results.callPhone', { phone: h.phone })} className="w-8 h-8 rounded-[9px] border-[1.5px] border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:border-[#D0423A] hover:text-[#D0423A] transition-colors">
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
           </a>
         )}
         <Link to={`/review?place=${h.id}`} title={t('card.rate')} aria-label={`${t('card.rate')}: ${h.name}`}
@@ -106,9 +106,9 @@ function DoctorCard({ doctor: d, anim }) {
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
             {d.featured && <span className="bg-[#D0423A] text-white text-[10px] font-bold uppercase tracking-[.06em] px-2 py-[3px] rounded-[6px] shrink-0">{t('card.topPick')}</span>}
-            <button type="button" onClick={toggleBookmark} title={t(saved ? 'card.saved' : 'card.save')} aria-pressed={saved}
+            <button type="button" onClick={toggleBookmark} title={t(saved ? 'card.saved' : 'card.save')} aria-label={t(saved ? 'card.saved' : 'card.save')} aria-pressed={saved}
               className="bg-transparent border-[1.5px] border-[#E2E8F0] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer text-[#94A3B8] hover:border-[#D0423A] hover:text-[#D0423A] transition-all shrink-0">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke={saved ? 'none' : 'currentColor'} strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke={saved ? 'none' : 'currentColor'} strokeWidth="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>
             </button>
           </div>
         </div>
@@ -126,7 +126,7 @@ function DoctorCard({ doctor: d, anim }) {
           </span>
           {d.walk_in && <span className={`${TAG} bg-[#EFF6FF] text-[#2563EB]`}>{t('card.walkIns')}</span>}
           {d.insurance && <span className={`${TAG} bg-[#EFF6FF] text-[#2563EB]`}>{t('card.insurance')}</span>}
-          {d.gender === 'female' && <span className={`${TAG} bg-[#EFF6FF] text-[#1D4ED8]`}>👩‍⚕️ {t('detail.female_doctor')}</span>}
+          {d.gender === 'female' && <span className={`${TAG} bg-[#EFF6FF] text-[#1D4ED8]`}><span aria-hidden="true">👩‍⚕️</span> {t('detail.female_doctor')}</span>}
           {d.languages?.length > 0 && <span className={`${TAG} bg-slate-100 text-[#64748B]`}>{d.languages.map(l => t(`lang.${l}`)).join(' · ')}</span>}
           {d.experience && <span className={`${TAG} bg-slate-100 text-[#64748B]`}>{t('card.yearsExp', { years: d.experience })}</span>}
         </div>

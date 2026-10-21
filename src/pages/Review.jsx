@@ -190,12 +190,12 @@ function ReviewForm({ subject }) {
           <p className="text-[12px] text-faint mb-[12px]">Upload a photo of a prescription or bill to get a "Verified visit" badge on your review. Optional, checked by our team, never shown publicly.</p>
           {proof ? (
             <div className="mt-[10px]">
-              <img src={proof.url} alt="Proof of visit" className="rounded-[10px] max-h-[160px] object-cover border border-border" />
+              <img src={proof.url} alt="Your proof of visit: the prescription or bill you chose to upload" className="rounded-[10px] max-h-[160px] object-cover border border-border" />
               <button type="button" onClick={() => setProof(null)} className="text-[12px] text-red font-medium mt-[6px] bg-transparent border-none cursor-pointer p-0">Remove photo</button>
             </div>
           ) : (
             <label htmlFor="proofInput" className="flex flex-col items-center justify-center gap-[8px] border-[1.5px] border-dashed border-border rounded-[12px] py-[24px] cursor-pointer hover:border-red transition-all">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
               <span className="text-[13px] text-muted font-medium">Tap to upload photo</span>
             </label>
           )}

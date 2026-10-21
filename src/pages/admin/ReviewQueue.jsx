@@ -5,12 +5,12 @@ import { Stars } from '../../components/ui';
 import { useDecideReviewMutation, usePendingReviewsQuery, useProofUrlQuery } from './adminApi';
 import { BTN_APPROVE, BTN_PLAIN, TabLoading } from './shared';
 
-function ProofPhoto({ path }) {
+function ProofPhoto({ path, alt }) {
   const { data: url, isLoading } = useProofUrlQuery(path ?? skipToken);
   return (
     <div className="w-full h-[200px] sm:w-[220px] sm:h-[220px] shrink-0 rounded-[10px] bg-[#F2F1ED] flex items-center justify-center overflow-hidden">
       {url
-        ? <img src={url} alt="Proof of visit" className="w-full h-full object-cover" />
+        ? <img src={url} alt={alt} className="w-full h-full object-cover" />
         : <span className="text-[12px] text-[#94A3B8] px-[10px] text-center">{isLoading ? 'Loading photo…' : "Couldn't load photo"}</span>}
     </div>
   );
@@ -32,7 +32,7 @@ function ProofCard({ review: r }) {
 
   return (
     <div className="bg-white border border-[#E6E6E1] rounded-[16px] p-[16px] sm:p-[20px] flex flex-col sm:flex-row gap-[16px] sm:gap-[20px]">
-      <ProofPhoto path={r.proof_photo_path} />
+      <ProofPhoto path={r.proof_photo_path} alt={`Proof of visit uploaded by ${r.author || 'a reviewer'} for ${(r.place_id ? r.hospitals?.name : r.doctors?.name) || 'this listing'}`} />
       <div className="flex-1 min-w-0">
         {r.place_id
           ? <><div className="font-serif text-[17px] text-[#1E293B]">{r.hospitals?.name || 'Unknown place'} <span className="text-[11px] font-sans font-semibold text-[#64748B] bg-[#F2F1ED] rounded-[5px] px-[6px] py-[1px] align-middle">Place review</span></div>

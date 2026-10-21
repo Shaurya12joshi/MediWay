@@ -125,7 +125,7 @@ function HoursCard({ place: h, listArgs, onSkip }) {
           <div className="text-[12px] text-[#64748B] mt-[2px] break-words">{h.address || 'No address'} · <a href={mapLink(h.lat, h.lng)} target="_blank" rel="noopener noreferrer" className="text-[#D0423A] underline">map</a></div>
         </div>
         {h.phone
-          ? <a href={`tel:${h.phone.replace(/[^\d+]/g, '')}`} className="shrink-0 flex items-center gap-[7px] bg-[#1E293B] hover:bg-black text-white no-underline px-[14px] py-[9px] rounded-[10px] text-[14px] font-semibold">📞 {h.phone}</a>
+          ? <a href={`tel:${h.phone.replace(/[^\d+]/g, '')}`} className="shrink-0 flex items-center gap-[7px] bg-[#1E293B] hover:bg-black text-white no-underline px-[14px] py-[9px] rounded-[10px] text-[14px] font-semibold"><span aria-hidden="true">📞</span> {h.phone}</a>
           : <span className="text-[12px] text-[#94A3B8]">No phone</span>}
       </div>
 

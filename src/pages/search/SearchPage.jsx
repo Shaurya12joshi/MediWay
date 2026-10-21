@@ -170,11 +170,11 @@ export default function SearchPage({ title, description }) {
         <div className="max-w-[1280px] 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 min-h-[48px] py-2 lg:py-0 lg:h-12 flex items-center justify-between gap-3">
           <div className="flex bg-slate-100 rounded-[9px] p-[3px] gap-0.5 shrink-0">
             <button type="button" aria-pressed={view === 'list'} onClick={() => showView('list')} className={view === 'list' ? VIEW_ON : VIEW_OFF}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
               {t('search.list')}
             </button>
             <button type="button" aria-pressed={view === 'map'} onClick={() => showView('map')} className={view === 'map' ? VIEW_ON : VIEW_OFF}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></svg>
               {t('search.map')}
             </button>
           </div>
@@ -184,7 +184,7 @@ export default function SearchPage({ title, description }) {
             </div>
             <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls={filterPanelId}
               className={`md:hidden flex items-center gap-1.5 shrink-0 border-[1.5px] bg-white rounded-[9px] px-3 py-[5px] text-[13px] font-medium cursor-pointer font-sans hover:border-[#D0423A] hover:text-[#D0423A] transition-all ${filtersOpen ? 'border-[#D0423A] text-[#D0423A]' : 'border-[#E2E8F0] text-[#1E293B]'}`}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
               {t('search.filters')}
             </button>
           </div>

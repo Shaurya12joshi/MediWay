@@ -48,7 +48,7 @@ export default function DirectionsDrawer() {
           <p className="text-[12px] text-[#64748B]">{d.hospital_address}</p>
           <button type="button" onClick={() => dispatch(closeDirections())} aria-label={t('dir.close')}
             className="absolute top-3.5 right-4 bg-none border-[1.5px] border-[#E2E8F0] rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-[#94A3B8] hover:border-[#D0423A] hover:text-[#D0423A]">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
         <div className="flex gap-2 px-5 py-3 border-b border-[#E2E8F0] overflow-x-auto">
@@ -57,7 +57,7 @@ export default function DirectionsDrawer() {
             return (
               <button key={mode} type="button" aria-pressed={on} onClick={() => dispatch(setDirMode(mode))}
                 className={`flex flex-col items-center gap-[3px] px-3.5 py-2 rounded-[10px] border-[1.5px] cursor-pointer font-sans min-w-[72px] transition-all ${on ? 'border-[#D0423A] bg-[#FDECEA]' : 'border-[#E2E8F0] bg-white hover:border-[#D0423A]'}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">{icon}</svg>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">{icon}</svg>
                 <span className={`text-[11px] font-medium ${on ? 'text-[#D0423A]' : 'text-[#64748B]'}`}>{t(label)}</span>
                 <span className="text-[13px] font-semibold text-[#1E293B]">{timeLabel(mode)}</span>
               </button>
@@ -73,7 +73,7 @@ export default function DirectionsDrawer() {
         <div className="px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex gap-2.5">
           <a href={directionsUrl(`${d.hospital} ${d.hospital_address}`, origin, dirMode)} target="_blank" rel="noopener noreferrer"
             className="flex-1 bg-[#D0423A] hover:bg-[#B8362F] text-white border-none py-[11px] rounded-[10px] text-[13px] font-semibold cursor-pointer flex items-center justify-center gap-[7px] font-sans no-underline">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
             {t(`dir.button.${dirMode}`)}
           </a>
         </div>

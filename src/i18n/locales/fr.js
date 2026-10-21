@@ -298,4 +298,5 @@ export default {
   'nf.search': 'Trouver des soins à proximité',
   'nf.emergency': 'Aide d’urgence',
   'nf.home': 'Accueil',
+  'map.label': 'Carte des médecins et des lieux à proximité. Les mêmes résultats figurent dans la vue Liste.',
 }

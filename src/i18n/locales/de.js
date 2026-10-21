@@ -298,4 +298,5 @@ export default {
   'nf.search': 'Hilfe in der Nähe finden',
   'nf.emergency': 'Notfallhilfe',
   'nf.home': 'Startseite',
+  'map.label': 'Karte mit Ärzten und Orten in Ihrer Nähe. Dieselben Ergebnisse stehen in der Listenansicht.',
 }

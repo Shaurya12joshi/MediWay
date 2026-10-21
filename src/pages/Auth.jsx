@@ -99,7 +99,7 @@ function SignupPanel({ onSwitch }) {
       {joinedEmail ? (
         <div className="text-center py-2">
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
           </div>
           <h2 className="font-custom font-bold text-xl text-slate-900 mb-1">You're on the list</h2>
           <p className="text-slate-500 text-sm mb-4 leading-relaxed">

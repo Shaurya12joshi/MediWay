@@ -141,7 +141,7 @@ function DoctorHoursCard({ doctor: d, listArgs, onSkip }) {
           </div>
         </div>
         {d.phone
-          ? <a href={`tel:${d.phone.replace(/[^\d+]/g, '')}`} className="shrink-0 flex items-center gap-[7px] bg-[#1E293B] hover:bg-black text-white no-underline px-[14px] py-[9px] rounded-[10px] text-[14px] font-semibold">📞 {d.phone}</a>
+          ? <a href={`tel:${d.phone.replace(/[^\d+]/g, '')}`} className="shrink-0 flex items-center gap-[7px] bg-[#1E293B] hover:bg-black text-white no-underline px-[14px] py-[9px] rounded-[10px] text-[14px] font-semibold"><span aria-hidden="true">📞</span> {d.phone}</a>
           : <span className="text-[12px] text-[#94A3B8]">No phone</span>}
       </div>
       <div className="mt-[14px] pt-[14px] border-t border-[#F0EFEA]">

@@ -137,7 +137,7 @@ function detailsHtml(h) {
 export function placePinHtml(h) {
   const k = kindOf(h);
   const weight = k === KINDS.hospital ? 3 : 2.2;
-  return `<div class="mw-hospital" style="--kind:${k.color}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${weight}" stroke-linecap="round" stroke-linejoin="round">${k.icon}</svg></div>`;
+  return `<div class="mw-hospital" style="--kind:${k.color}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${weight}" stroke-linecap="round" stroke-linejoin="round">${k.icon}</svg></div>`;
 }
 
 // The SDK owns the wrapper's transform, so the rotated pin lives one level down

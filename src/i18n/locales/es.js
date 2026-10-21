@@ -298,4 +298,5 @@ export default {
   'nf.search': 'Buscar atención cerca',
   'nf.emergency': 'Ayuda de emergencia',
   'nf.home': 'Inicio',
+  'map.label': 'Mapa de médicos y lugares cercanos. Los mismos resultados están en la vista de lista.',
 }

@@ -298,4 +298,5 @@ export default {
   'nf.search': '近くの医療機関を探す',
   'nf.emergency': '緊急時のヘルプ',
   'nf.home': 'ホーム',
+  'map.label': '近くの医師と医療機関の地図。同じ結果はリスト表示でも見られます。',
 }

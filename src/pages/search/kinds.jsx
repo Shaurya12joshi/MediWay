@@ -31,7 +31,7 @@ export function telHref(phone) { return 'tel:' + phone.replace(/[^\d+]/g, ''); }
 
 export function KindIcon({ kind, size = 20 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
       strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: kind.icon }} />
   );
 }

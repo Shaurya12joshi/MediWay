@@ -323,7 +323,7 @@ export default function Home() {
 
     <div className="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors">
       <span className="text-4xl">
-<svg xmlns="http://www.w3.org/2000/svg" 
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" 
      width="52" 
      height="52" 
      viewBox="0 0 24 24" 
@@ -344,7 +344,7 @@ export default function Home() {
     </div>
 
     <div className="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-languages-icon lucide-languages"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></span>
       <div>
         <h3 className="text-white font-bold text-lg mb-2">Language barriers</h3>
         <p className="text-white/50 text-sm leading-relaxed">Foreign tourists and inter-state travelers struggle to communicate symptoms to local doctors.</p>
@@ -352,7 +352,7 @@ export default function Home() {
     </div>
 
     <div className="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock-icon lucide-clock"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock-icon lucide-clock"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
       <div>
         <h3 className="text-white font-bold text-lg mb-2">Critical time lost</h3>
         <p className="text-white/50 text-sm leading-relaxed">In emergencies, minutes matter. Finding an ER shouldn't involve scrolling through reviews.</p>
@@ -360,7 +360,7 @@ export default function Home() {
     </div>
 
     <div className="bg-[#2a2a2a] rounded-2xl p-6 flex flex-col gap-4 border border-white/5 hover:border-white/10 transition-colors md:col-span-3 lg:col-span-3">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-check-icon lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-check-icon lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
       <div>
         <h3 className="text-white font-bold text-3xl mb-2 ">No way to verify trust</h3>
         <p className="text-white/50 text-xl leading-relaxed">Generic maps show clinics but offer no insight into quality, specialization, or wait times.</p>
@@ -392,7 +392,7 @@ export default function Home() {
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#D0423A] rounded-t-2xl"></div>
       <div className="flex items-start justify-between">
-        <span className="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#c62f2f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map-pinned-icon lucide-map-pinned"><path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/></svg></span>
+        <span className="text-3xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#c62f2f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map-pinned-icon lucide-map-pinned"><path d="M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0"/><circle cx="12" cy="8" r="2"/><path d="M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712"/></svg></span>
         <span className="text-5xl font-bold text-slate-100 leading-none">01</span>
       </div>
       <div>
@@ -409,7 +409,7 @@ export default function Home() {
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#1A7A52] rounded-t-2xl"></div>
       <div className="flex items-start justify-between">
-        <span className="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2f7dc6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-earth-icon lucide-earth"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg></span>
+        <span className="text-3xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#2f7dc6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-earth-icon lucide-earth"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg></span>
         <span className="text-5xl font-bold text-slate-100 leading-none">02</span>
       </div>
       <div>
@@ -426,7 +426,7 @@ export default function Home() {
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#2563EB] rounded-t-2xl"></div>
       <div className="flex items-start justify-between">
-        <span className="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-compass-icon lucide-compass"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
+        <span className="text-3xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-compass-icon lucide-compass"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span>
         <span className="text-5xl font-bold text-slate-100 leading-none">03</span>
       </div>
       <div>
@@ -442,7 +442,7 @@ export default function Home() {
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#D97706] rounded-t-2xl"></div>
       <div className="flex items-start justify-between">
-        <span className="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#69c8f7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg></span>
+        <span className="text-3xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#69c8f7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-id-card-icon lucide-id-card"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg></span>
         <span className="text-5xl font-bold text-slate-100 leading-none">04</span>
       </div>
       <div>
@@ -459,7 +459,7 @@ export default function Home() {
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#D0423A] rounded-t-2xl"></div>
       <div className="flex items-start justify-between">
-        <span className="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffdd00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pill-icon lucide-pill"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+        <span className="text-3xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ffdd00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pill-icon lucide-pill"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
         <span className="text-5xl font-bold text-slate-100 leading-none">05</span>
       </div>
       <div>
@@ -476,7 +476,7 @@ export default function Home() {
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1 bg-[#1A7A52] rounded-t-2xl"></div>
       <div className="flex items-start justify-between">
-        <span className="text-3xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#C0C0C0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star-icon lucide-star"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span>
+        <span className="text-3xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#C0C0C0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-star-icon lucide-star"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span>
         <span className="text-5xl font-bold text-slate-100 leading-none">06</span>
       </div>
       <div>
@@ -508,7 +508,7 @@ export default function Home() {
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plane-icon lucide-plane"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plane-icon lucide-plane"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Foreign Tourists</h3>
         <p className="text-slate-500 text-sm leading-relaxed">Find English-speaking doctors and 24/7 emergency rooms. Insurance and international payment details are coming soon.</p>
@@ -516,7 +516,7 @@ export default function Home() {
     </div>
 
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#6734c5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-train-front-icon lucide-train-front"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1"/><path d="m9 15-1-1"/><path d="m15 15 1-1"/><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3"/><path d="m16 19 2 3"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#6734c5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-train-front-icon lucide-train-front"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1"/><path d="m9 15-1-1"/><path d="m15 15 1-1"/><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z"/><path d="m8 19-2 3"/><path d="m16 19 2 3"/></svg></span>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Domestic Travelers</h3>
         <p className="text-slate-500 text-sm leading-relaxed">Visiting an unfamiliar city? Find trusted local doctors without relying on word-of-mouth.</p>
@@ -524,7 +524,7 @@ export default function Home() {
     </div>
 
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-graduation-cap-icon lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Students & Professionals</h3>
         <p className="text-slate-500 text-sm leading-relaxed">Relocated to a new city for college or work? Build a healthcare network quickly.</p>
@@ -532,7 +532,7 @@ export default function Home() {
     </div>
 
     <div className="bg-white rounded-2xl p-6 flex flex-col gap-4 border border-slate-100 hover:shadow-md transition-shadow">
-      <span className="text-4xl"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-siren-icon lucide-siren"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/><path d="M21 12h1"/><path d="M18.5 4.5 18 5"/><path d="M2 12h1"/><path d="M12 2v1"/><path d="m4.929 4.929.707.707"/><path d="M12 12v6"/></svg></span>
+      <span className="text-4xl"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-siren-icon lucide-siren"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/><path d="M21 12h1"/><path d="M18.5 4.5 18 5"/><path d="M2 12h1"/><path d="M12 2v1"/><path d="m4.929 4.929.707.707"/><path d="M12 12v6"/></svg></span>
       <div>
         <h3 className="font-bold text-slate-900 text-lg mb-2">Emergency Situations</h3>
         <p className="text-slate-500 text-sm leading-relaxed">Anyone needing care fast: one tap to call 112 or 108, share your location, or find the nearest 24/7 emergency room.</p>

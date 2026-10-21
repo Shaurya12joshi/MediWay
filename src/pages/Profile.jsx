@@ -199,8 +199,8 @@ function DoctorProfile({ doctor: d, reviews }) {
               </div>
               <div className="flex flex-wrap gap-[6px] mt-[14px]">
                 {d.walk_in && <span className={PILL}><CheckIcon />{t('profile.walkIns')}</span>}
-                {d.insurance && <span className={PILL}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>{t('profile.insurance')}</span>}
-                {d.gender === 'female' && <span className={PILL}>👩‍⚕️ {t('detail.female_doctor')}</span>}
+                {d.insurance && <span className={PILL}><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>{t('profile.insurance')}</span>}
+                {d.gender === 'female' && <span className={PILL}><span aria-hidden="true">👩‍⚕️</span> {t('detail.female_doctor')}</span>}
                 {languages.map(l => <span key={l} className="inline-flex items-center gap-[5px] text-[11px] font-medium py-[5px] px-[12px] rounded-[100px] bg-[#F2F1ED] border-[1.5px] border-border text-muted">{t(`lang.${l}`)}</span>)}
               </div>
             </div>
@@ -309,7 +309,7 @@ function DoctorProfile({ doctor: d, reviews }) {
                 <div><div className="text-[13px] font-semibold text-text">{t('profile.timings')}</div><div className="text-[12px] text-faint mt-[2px] leading-[1.5]">{timings}</div></div>
               </div>
               <div className="flex gap-[12px] items-start">
-                <div className="w-[36px] h-[36px] rounded-[10px] bg-[#F2F1ED] flex items-center justify-center shrink-0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg></div>
+                <div className="w-[36px] h-[36px] rounded-[10px] bg-[#F2F1ED] flex items-center justify-center shrink-0"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg></div>
                 <div>
                   <div className="text-[13px] font-semibold text-text">{t('profile.languages')}</div>
                   <div className="flex flex-wrap gap-[5px] mt-[6px]">{languages.map(l => <span key={l} className="text-[11px] font-medium py-[3px] px-[9px] rounded-[6px] bg-[#F2F1ED] border border-border text-muted">{t(`lang.${l}`)}</span>)}</div>
